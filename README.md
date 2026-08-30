@@ -4,7 +4,7 @@
 **© 2026 Chemuel Jhon L. Dela Peña. Licensed under CC BY 4.0.**
 
 You are free to use, share, adapt, teach, implement, or build tools based
-on Flow Notation for any purpose, commercial or otherwise **provided
+on Flow Notation — for any purpose, commercial or otherwise — **provided
 that Chemuel Jhon L. Dela Peña is credited as the originator of Flow
 Notation** wherever the name, the axioms, the theorems, or the underlying
 methodology are used, referenced, or built upon.
@@ -18,7 +18,7 @@ Full license text: https://creativecommons.org/licenses/by/4.0/
 
 ## Table of Contents
 
-- [0. Methodology](#0-methodology)
+- [0. Methodology — "Rename, Recalibrate, Readjust"](#0-methodology--rename-recalibrate-readjust)
 - [1. Primitives](#1-primitives)
 - [2. Axioms](#2-axioms)
 - [3. Relations](#3-relations)
@@ -26,13 +26,19 @@ Full license text: https://creativecommons.org/licenses/by/4.0/
 - [5. The Dependency Test (summary)](#5-the-dependency-test-summary)
 - [6. Sibling as a Refactoring Invariant](#6-sibling-as-a-refactoring-invariant)
 - [7. Theorems](#7-theorems) (11 theorems, each proven and empirically tested)
+- [Code examples](#code-examples)
+
+**Code examples referenced throughout this document** are included
+alongside this file — each one was written and run to test a specific
+claim before that claim was accepted into the text; none are illustrative
+only.
 
 ---
 
 **Definition.** Flow Notation is a method for modeling software as a graph
 of black-box responsibilities (Layers), where edges represent verified
-dependency checked against each Layer's stated responsibility via the
-Dependency Test constrained by three Axioms governing direction, depth,
+dependency — checked against each Layer's stated responsibility via the
+Dependency Test — constrained by three Axioms governing direction, depth,
 and fan-out. The provable consequences of holding all three Axioms at once
 (Shielding, Sibling/Parent Independence, quantified exposure, and more)
 give the graph predictive and diagnostic power beyond what the Axioms alone
@@ -43,17 +49,17 @@ connect, how tightly they should connect, and how to name/verify the connections
 before trusting them.
 
 **A note on Axiom vs. Theorem vs. Relation**, since the three are easy to
-blur: **Axioms** (§2) are stipulated they define what Flow Notation *is*,
+blur: **Axioms** (§2) are stipulated — they define what Flow Notation *is*,
 not something derived from anything more basic. **Relations** (§3) are
 descriptive vocabulary for shapes the graph can take; they carry no
 obligations of their own. **Theorems** (§7) are claims *proven* from the
-Axioms they are not additional rules, they are guaranteed consequences.
+Axioms — they are not additional rules, they are guaranteed consequences.
 Nothing in §7 could be false while the Axioms hold; that's what makes them
 theorems rather than more design guidance.
 
 ---
 
-## 0. Methodology
+## 0. Methodology — "Rename, Recalibrate, Readjust"
 
 Applied **before** any edge is drawn, and re-applied whenever a Node's
 responsibility or an edge is in doubt.
@@ -67,21 +73,21 @@ responsibility or an edge is in doubt.
 2. **Recalibrate** — Test every proposed edge with the **Dependency Test**:
 
    > Does A's responsibility sentence become false, incomplete, or
-   > meaningless without B or does A merely happen to hold/pass/contain
+   > meaningless without B — or does A merely happen to hold/pass/contain
    > B as incidental content?
 
    - Breaks without B → real dependency → **A→B** is a true edge.
-   - Survives fine (just empty/generic) without B → **no edge** B was
+   - Survives fine (just empty/generic) without B → **no edge** — B was
      decorative, not structural.
 
    Note: a dependency is on *what's required*, not on *what happens to pass
    through*. A Node that only receives a plain value (not a live reference to
-   another Node) may not depend on the Node that produced that value see
+   another Node) may not depend on the Node that produced that value — see
    the Story Runner case below.
 
 3. **Readjust** — After correcting names and pruning decorative edges,
    re-check the whole graph against Axioms 1–3 (below). Corrections at this
-   stage can resolve or reveal axiom violations that weren't visible
+   stage can resolve — or reveal — axiom violations that weren't visible
    before the responsibility sentences were made precise.
 
 ---
@@ -93,101 +99,103 @@ responsibility or an edge is in doubt.
 
   **The Black-Box Property.** A well-defined responsibility is inherently a
   contract stated in terms of input and output, never in terms of internal
-  mechanism. This is not a separate rule bolted onto Node, it is what
-  "well-defined responsibility" *means*: to depend on A is to trust that A's
-  output is consistent given its input, never to see or rely on how A
-  produces that output. Every Node is therefore a black box to everything
-  outside it, by definition, not by access-control convention.
+  mechanism. This is not a separate rule bolted onto Node — it is what
+  "well-defined responsibility" *means*: to depend on `A` is to trust that
+  `A`'s output is consistent given its input, never to see or rely on how
+  `A` produces that output. Every Node is therefore a black box to
+  everything outside it, by definition, not by access-control convention.
 
   This single property is the shared root of two things that otherwise look
   like separate rules:
   - **Axiom 2** (no skip-level access) is the black-box property applied
-    *between* Nodes: A may depend on B and trust B's output, but A may never
-    reach past B to see how B produced it (i.e. into C, B's own dependency).
+    *between* Nodes: `A` may depend on `B` and trust `B`'s output, but `A`
+    may never reach past `B` to see how `B` produced it (i.e. into `C`,
+    `B`'s own dependency).
   - **Composition** (below) is the black-box property applied *inside* a
     single Node: whatever internal parts a Node is made of are exactly as
-    unreachable from the outside as C was to A above — for the same reason,
-    not a different one.
+    unreachable from the outside as `C` was to `A` above — for the same
+    reason, not a different one.
 
-- **Edge (A→B)** — "A depends on B." Tail = the dependent, head = the
-  dependency. A→B means A cannot fulfill its responsibility without B's
-  support.
-- **D(A)** — the direct dependency set of A: `{ X : A→X }`.
-- **Δ(D)** — the direct dependent set of D: `{ X : X→D }` (the reverse of D).
-- **C(A)** — the **Contract** of A: the set of all Interface Layer members
-  A exposes for others to depend on, `C(A) = { A+f1, A+f2, ... }` (see
-  Interface Layer, below). An edge `X→A` is well-formed only if it targets
-  something in `C(A)`, a sub-layer `A_B` is never a member of `C(A)`, by
-  the Black-Box Property above. Where earlier sections say "A's contract"
-  informally, `C(A)` is the formal object being referred to.
-- **U(X,A)**, the subset of `C(A)` that X actually uses: `U(X,A) ⊆ C(A)`.
-  Most edges `X→A` only exercise part of `C(A)`, not all of it. A change to
-  `C(A) \ U(X,A)` does not affect X; a change to any member of `U(X,A)`
-  does. This is the basis for Theorem 5's weighting.
-- **∅** — not a node; a marker meaning "no real parent" (empty/null). Used
-  to mark top-level Nodes: `A ∈ D(∅)` means nothing depends on A being
-  someone else's child — A is a root.
-- **A_B** — **Composition**, not a graph edge. Read as "B is the internal
-  structure of A." Describes what A is made of (e.g. `Machine_validate`,
-  `Machine_log`), invisible from outside A because of the Black-Box
-  Property above, not because of whatever language mechanism happens to
-  enforce it. Composition is a different axis entirely from dependency:
-  - The outer graph only ever sees **A** as a black box (its D(A) and Δ(A)).
-    This was already true the moment A was called a Layer with a
-    well-defined responsibility; a sub-layer A_B is simply what's found
-    when that box is opened for A's own construction, not for anyone else's
-    consumption.
-  - Internally, A's sub-layers (A_x, A_y, ...) can form their **own** Flow
-    Notation graph, governed by the same three Axioms, scoped entirely
-    inside A.
-  - `A_B → A` is not merely forbidden, it is not well-formed, A_B is a
-    label naming A's internals, not a Node that can participate in an edge
-    with A itself.
+- **Edge (`A→B`)** — "`A` depends on `B`." Tail = the dependent, head = the
+  dependency. `A→B` means `A` cannot fulfill its responsibility without
+  `B`'s support.
+- **`D(A)`** — the direct dependency set of `A`: `{ X : A→X }`.
+- **`Δ(D)`** — the direct dependent set of `D`: `{ X : X→D }` (the reverse
+  of `D`).
+- **`C(A)`** — the **Contract** of `A`: the set of all Interface Layer
+  members `A` exposes for others to depend on, `C(A) = { A+f1, A+f2, ... }`
+  (see Interface Layer, below). An edge `X→A` is well-formed only if it
+  targets something in `C(A)` — a sub-layer `A_B` is never a member of
+  `C(A)`, by the Black-Box Property above. Where earlier sections say "`A`'s
+  contract" informally, `C(A)` is the formal object being referred to.
+- **`U(X,A)`** — the subset of `C(A)` that `X` actually uses:
+  `U(X,A) ⊆ C(A)`. Most edges `X→A` only exercise part of `C(A)`, not all
+  of it. A change to `C(A) \ U(X,A)` does not affect `X`; a change to any
+  member of `U(X,A)` does. This is the basis for Theorem 5's weighting.
+- **`∅`** — not a node; a marker meaning "no real parent" (empty/null).
+  Used to mark top-level Nodes: `A ∈ D(∅)` means nothing depends on `A`
+  being someone else's child — `A` is a root.
+- **`A_B`** — **Composition**, not a graph edge. Read as "`B` is the
+  internal structure of `A`." Describes what `A` is made of (e.g.
+  `Machine_validate`, `Machine_log`), invisible from outside `A` because of
+  the Black-Box Property above — not because of whatever language
+  mechanism happens to enforce it. Composition is a different axis
+  entirely from dependency:
+  - The outer graph only ever sees **`A`** as a black box (its `D(A)` and
+    `Δ(A)`). This was already true the moment `A` was called a Layer with
+    a well-defined responsibility; a sub-layer `A_B` is simply what's
+    found when that box is opened for `A`'s own construction, not for
+    anyone else's consumption.
+  - Internally, `A`'s sub-layers (`A_x`, `A_y`, ...) can form their **own**
+    Flow Notation graph, governed by the same three Axioms, scoped
+    entirely inside `A`.
+  - `A_B → A` is not merely forbidden, it is not well-formed — `A_B` is a
+    label naming `A`'s internals, not a Node that can participate in an
+    edge with `A` itself.
   - No external Node may target a sub-layer directly (`X → A_B` is
-    illegal) only `X → A` is legal. This is the Black-Box Property
-    stated once more, one level deeper: A_B was never exposed as something
-    depend-able-on from outside A, because exposing it would mean the
-    outside can see inside the box, which is precisely what a Layer's
-    contract exists to prevent. Private fields, closures, module scope,
-    or any other language mechanism used to enforce this are
+    illegal) — only `X → A` is legal. This is the Black-Box Property
+    stated once more, one level deeper: `A_B` was never exposed as
+    something depend-able-on from outside `A`, because exposing it would
+    mean the outside can see inside the box, which is precisely what a
+    Layer's contract exists to prevent. Private fields, closures, module
+    scope, or any other language mechanism used to enforce this are
     implementation details of the enforcement — not the reason the
-    property holds. The reason is that A_B was never meant to be
-    addressable the moment A was defined as a Layer at all.
+    property holds. The reason is that `A_B` was never meant to be
+    addressable the moment `A` was defined as a Layer at all.
 
-- **A+f** — **Interface Layer**, a third primitive distinct from both Node
-  and sub-layer. Read as "f is a member of A's Interface Layer", i.e.
-  `f ∈ C(A)`. An Interface Layer member is a genuine hybrid, and this is
-  precisely why it cannot be classified as a sub-layer despite sitting
-  inside A's definition:
+- **`A+f`** — **Interface Layer**, a third primitive distinct from both
+  Node and sub-layer. Read as "`f` is a member of `A`'s Interface Layer" —
+  i.e. `f ∈ C(A)`. An Interface Layer member is a genuine hybrid, and this
+  is precisely why it cannot be classified as a sub-layer despite sitting
+  inside `A`'s definition:
   - **Reachable, unlike a sub-layer.** `A+f` is exactly what a real edge
-    `X→A` is permitted to target — it is the boundary itself, the one part
-    of A's insides that is allowed to show. A sub-layer `A_B` is, by
-    contrast, never a legal edge target (Black-Box Property).
+    `X→A` is permitted to target — it is the boundary itself, the one
+    part of `A`'s insides that is allowed to show. A sub-layer `A_B` is,
+    by contrast, never a legal edge target (Black-Box Property).
   - **Not subject to Theorem 6's Duplicate-or-Promote dilemma.** A
     sub-layer needing external reuse must be duplicated or promoted into a
-    real Node. An Interface Layer member has no such dilemma, it is
+    real Node. An Interface Layer member has no such dilemma — it is
     already the external-facing thing; nothing about it needs promoting.
-  - **May still depend on sub-layers internally.** `A+f`'s *implementation*
-    can hold real internal edges into A's sub-layers, e.g. `A+run →
-    A_validate`, `A+run → A_log` without those sub-layers ever leaking
-    through `A+f`'s own name or signature. This is the resolution to an
-    earlier open question: `C(A)` as a *set* does not itself hold
-    dependencies (a set cannot depend on anything); rather, each
-    *individual member* `A+f` may depend on A's sub-layers, and this
-    dependency is entirely internal to A, invisible from outside exactly
-    as any other composition edge is.
+  - **May still depend on sub-layers internally.** `A+f`'s
+    *implementation* can hold real internal edges into `A`'s sub-layers —
+    e.g. `A+run → A_validate`, `A+run → A_log` — without those sub-layers
+    ever leaking through `A+f`'s own name or signature. This is the
+    resolution to an earlier open question: `C(A)` as a *set* does not
+    itself hold dependencies (a set cannot depend on anything); rather,
+    each *individual member* `A+f` may depend on `A`'s sub-layers, and
+    this dependency is entirely internal to `A`, invisible from outside
+    exactly as any other composition edge is.
   - Confirmed empirically: enumerating a real class's visible members
     (`Object.getOwnPropertyNames`) shows only Interface Layer members
-    (e.g. `run`), sub-layers (`#validate`, `#log`) do not appear at all,
+    (e.g. `run`) — sub-layers (`#validate`, `#log`) do not appear at all,
     by any name, even though `run`'s own implementation depends on both.
 
   Because the black-box property is symmetric between "between Nodes" and
   "inside a Node," Layer and sub-layer are not a primary structure with a
-  secondary add-on. They are the **same single idea (a black box with a
+  secondary add-on — they are the **same single idea (a black box with a
   contract) applied at two scales**, exactly as much load-bearing at one
   scale as the other. See Theorem 6 (§7) for the proven consequence of this
-  for reuse, and Theorem 5 for the mirrored minimality claim on C(A).
-  for reuse.
+  for reuse, and Theorem 5 for the mirrored minimality claim on `C(A)`.
 
 ---
 
@@ -198,65 +206,66 @@ Dependency must flow strictly downward. If `A→B`, then `B→A` can never also
 hold, directly or transitively. No cycles.
 
 **Axiom 2 — No Skip-Level Access.**
-If `A→B→C`, `A` may not also hold a direct edge to `C`. To use C's functionality,
-A must go through B. Grandchildren are reached only via the child, never
-bypassed.
+If `A→B→C`, `A` may not also hold a direct edge to `C`. To use `C`'s
+functionality, `A` must go through `B`. Grandchildren are reached only via
+the child, never bypassed.
 
 **Axiom 3 — Local Minimal Fan-Out.**
 For every Node `A`, `|D(A)|` must be reduced to the irreducible minimum
-required for `A` to fulfill its stated responsibility. An edge `A→X` survives
-only if `X` is not redundant, not mergeable into another dependency, and not
-reachable transitively through an existing dependency. Evaluated **per
-node**, independent of the rest of the graph.
+required for `A` to fulfill its stated responsibility. An edge `A→X`
+survives only if `X` is not redundant, not mergeable into another
+dependency, and not reachable transitively through an existing dependency.
+Evaluated **per node**, independent of the rest of the graph.
 
 These two properties fall directly out of the Axioms, not from separate
 rules:
 
-- **Shielding.** If `A→B→C` (Axiom 2 satisfied), C's internal changes only
-  affect `A` if they change B's observable contract. C's risk to `A` is
-  *mediated* by `B`. Violating Axiom 2 (adding `A→C` directly) removes the
-  shield, `C` becomes as directly risky to `A` as `B` is.
-- **Bounded, deliberate risk.** Once `D(A)` is minimal (Axiom 3), A's direct
-  exposure is fixed at its floor. Any further addition to D(A) is now a
-  visible, deliberate decision, not incidental sprawl.
+- **Shielding.** If `A→B→C` (Axiom 2 satisfied), `C`'s internal changes
+  only affect `A` if they change `B`'s observable contract. `C`'s risk to
+  `A` is *mediated* by `B`. Violating Axiom 2 (adding `A→C` directly)
+  removes the shield — `C` becomes as directly risky to `A` as `B` is.
+- **Bounded, deliberate risk.** Once `D(A)` is minimal (Axiom 3), `A`'s
+  direct exposure is fixed at its floor. Any further addition to `D(A)` is
+  now a visible, deliberate decision, not incidental sprawl.
 
 ---
 
 ## 3. Relations
 
-Relations are **consequences** of the graph's shape under the Axioms, not
+Relations are **consequences** of the graph's shape under the Axioms — not
 additional rules to enforce. They are descriptive vocabulary, not
 prescriptive constraints.
 
 **Sibling — `~A = D(A)`**
-The Sibling set under `A`. Any two members share direct parent `A` (converge
-from above). Symmetric; relative to the anchor `A`. The same pair may be
-Sibling under one anchor and unrelated under another.
+The Sibling set under `A`. Any two members share direct parent `A`
+(converge from above). Symmetric; relative to the anchor `A`. The same pair
+may be Sibling under one anchor and unrelated under another.
 
 **Peer — `~∅`**
 The degenerate case of Sibling where the anchor is `∅`. `~∅` is the set of
 all top-level (root) Nodes — those in `D(∅)`. Any two members share *no*
 parent and no coupling whatsoever; this holds regardless of whether they
 later converge on a shared descendant downstream (Peer is blind to
-downstream structure. It only asks about shared *parentage*).
+downstream structure — it only asks about shared *parentage*).
 
 **Parent — `^D = Δ(D)`**
-The Parent set with respect to `D`. Any two (or more) members directly depend
-on the same child `D` (converge from below), the mirror image of Sibling,
-opposite direction. Read `A ^ C` as "A is parent-*with* C" (jointly parents
-of something), not "A is parent-of C."
+The Parent set with respect to `D`. Any two (or more) members directly
+depend on the same child `D` (converge from below) — the mirror image of
+Sibling, opposite direction. Read `A^C` as "`A` is parent-*with* `C`"
+(jointly parents of something), not "`A` is parent-of `C`."
 
 Notes on interaction between relations:
 
 - Peer and Sibling are mutually exclusive for a given pair (Peer is the
-  ∅-case of Sibling, a pair is under a real anchor or under ∅, never both).
-- Peer and Parent are **not** mutually exclusive, they're orthogonal axes
-  (shared-parent vs shared-child). e.g. `A→B`, `C→B` gives both `A ∈ ~∅` /
-  `C ∈ ~∅` (if A, C are roots) **and** `A, C ∈ ^B` simultaneously.
-- Parent only sees *direct* `Δ(D)` membership, an indirect ancestor of `D`
+  `∅`-case of Sibling — a pair is under a real anchor or under `∅`, never
+  both).
+- Peer and Parent are **not** mutually exclusive — they're orthogonal axes
+  (shared-parent vs shared-child). E.g. `A→B`, `C→B` gives both `A ∈ ~∅` /
+  `C ∈ ~∅` (if `A`, `C` are roots) **and** `A, C ∈ ^B` simultaneously.
+- Parent only sees *direct* `Δ(D)` membership — an indirect ancestor of `D`
   (reachable via a longer path) is not a member of `^D`, exactly as Sibling
-  only sees direct `D(A)` membership. Depth/distance does not leak into either
-  relation.
+  only sees direct `D(A)` membership. Depth/distance does not leak into
+  either relation.
 
 ---
 
@@ -267,7 +276,7 @@ with zero shared structure anywhere in the graph — the simplest, cleanest
 case.
 
 **Convergent roots:** `A→B→C→D`, `E→D` ⟹ `A, E ∈ ~∅` (Peer, roots with no
-shared parent) **and** `C, E ∈ ^D` (Parent, both directly feed `D`). Peer and
+shared parent) **and** `C, E ∈ ^D` (Parent, both directly feed D). Peer and
 Parent coexist without contradiction — different axes.
 
 **Symmetric diamond:** `A→B→D`, `A→C→D` ⟹ `~A = {B, C}` (Sibling) **and**
@@ -275,8 +284,8 @@ Parent coexist without contradiction — different axes.
 equal length. No Axiom 2 violation: A never touches D directly.
 
 **Asymmetric diamond:** `A→B→D`, `A→C→E→D` ⟹ `~A = {B, C}`, but `^D =
-{B, E}` **`C` is excluded from `^D`** despite being an ancestor of `D`, because
-C's edge terminates at `E`, not `D`. The two sets diverge once path lengths
+{B, E}` — **C is excluded from ^D** despite being an ancestor of D, because
+C's edge terminates at E, not D. The two sets diverge once path lengths
 differ; overlap in the symmetric case was coincidental, not structural.
 
 **Story example (Rename/Recalibrate in action):**
@@ -284,11 +293,11 @@ Programs: Storyline (holds story data, exposes `getStoryline()`), Story
 Runner (executes a story), Story Setup (prepares Storyline, retrieves data,
 hands off to Runner).
 
-Naive first pass suggested a triangle (`Setup→Storyline`, `Setup→Runner`,
-`Runner→Storyline`), which violates Axiom 2 (Setup reaches Storyline both
+Naive first pass suggested a triangle (Setup→Storyline, Setup→Runner,
+Runner→Storyline) — which violates Axiom 2 (Setup reaches Storyline both
 directly and via Runner).
 
-Recalibrating against "Setup" taken literally, *prepare, then hand off* —
+Recalibrating against "Setup" taken literally — *prepare, then hand off* —
 resolves it: Setup fetches the storyline value itself and passes the
 *value* into Runner. Runner's responsibility ("run a story") is satisfied by
 receiving data, not by holding a live dependency on the Storyline program.
@@ -328,13 +337,13 @@ The single mechanical question underlying every edge decision in this
 document:
 
 > **Does A's responsibility sentence become false, incomplete, or
-> meaningless without `B`, or does `A` merely happen to hold, pass, or contain
-> `B` as incidental content?**
+> meaningless without B — or does A merely happen to hold, pass, or contain
+> B as incidental content?**
 
-Breaks without `B → (A→B)` is real. Survives (empty/generic) without `B → no
-edge`. Passing a *value* produced by `B` is not the same as depending on `B`,
-what matters is whether A's own definition collapses without `B`, not whether
-B's output ever touched `A`.
+Breaks without B → `A→B` is real. Survives (empty/generic) without B → no
+edge. Passing a *value* produced by B is not the same as depending on B —
+what matters is whether A's own definition collapses without B, not whether
+B's output ever touched A.
 
 ---
 
@@ -343,9 +352,9 @@ B's output ever touched `A`.
 **Claim:** if `A, B ∈ ~X` for some real X, then `A→B` and `B→A` must both be
 false.
 
-**Why it's forced, not conventional:** if `A` and `B` share direct parent `X`
+**Why it's forced, not conventional:** if A and B share direct parent X
 (`X→A`, `X→B`), and an edge `A→B` also existed, that reconstructs
-`X→A→B` a path **plus** the direct edge `X→B`. That is exactly the
+`X→A→B` — a path — **plus** the direct edge `X→B`. That is exactly the
 skip-level shape Axiom 2 forbids. Sibling status structurally implies "no
 direct edge between the pair" as an automatic consequence of Axiom 2, not
 as a separate rule to remember.
@@ -390,7 +399,7 @@ edge between the pair always reconstructs the forbidden triangle.
 
 **Fix.** Apply the Dependency Test to PaymentHandler: does "charge a
 customer" require InventoryHandler to *exist*, or only a plain
-stock-availability *value*? Only a value, so OrderProcessor checks stock
+stock-availability *value*? Only a value — so OrderProcessor checks stock
 itself and passes the result in:
 
 ```js
@@ -417,26 +426,7 @@ fix costs nothing functionally while restoring the shielding guarantee:
 changes to InventoryHandler's internals can no longer reach PaymentHandler
 except through OrderProcessor's own contract.
 
-### 6.2 Why this matters for refactoring
-
-Because Sibling (shared parent) plus any direct edge between the pair always
-reconstructs a skip-level triangle, **the invariant is self-enforcing, not a
-convention to remember**:
-
-1. **A mechanical test.** For every pair in `~X`, check for any edge between
-   them. Finding one means the graph was never well-formed, or the
-   invariant has eroded since it was built.
-2. **Predictable change.** While Sibling genuinely holds, a change to one
-   member can never directly ripple into the other — only back up through
-   the shared parent's contract (the shielding theorem).
-3. **A dictated repair, not a judgment call.** The Axioms hand you the only
-   two legal fixes: either the direct edge from the shared parent was
-   already redundant (promote the chain, Axiom 3), or the hidden edge
-   should never have existed and the dependency was really just a value
-   (restore Sibling, as above). Which repair applies is answered by running
-   the Dependency Test again on the specific edge in question.
-
-### 6.1 A harder case — when Step 0 alone is not enough
+### 6.2 A harder case — when Step 0 alone is not enough
 
 A genuinely unengineered test (a small signup-and-welcome-email system,
 not built to demonstrate any particular theorem) surfaced a case tougher
@@ -463,16 +453,16 @@ side by side).
 (Rename/Recalibrate) had not actually been applied before reaching for
 graph surgery. Retroactively applying it to `SignupValidator` surfaced a
 real, separate problem: its responsibility sentence required an "and" to
-be honest, "validates input shape **and** checks uniqueness against
-storage", exactly the smell Step 0 exists to catch (§0). This was split
+be honest — "validates input shape **and** checks uniqueness against
+storage" — exactly the smell Step 0 exists to catch (§0). This was split
 into two honestly-named Nodes: `InputShapeValidator` (pure syntax checks,
 no dependencies) and `UniquenessChecker` (a genuine data check, depending
 on `UserRepository`).
 
 **The result, checked rather than assumed.** Splitting responsibility
 honestly did **not**, on its own, resolve the Axiom 2 violation: the
-resulting graph `SignupService→UniquenessChecker→UserRepository` as a
-path, alongside `SignupService→UserRepository` directly is still exactly
+resulting graph — `SignupService→UniquenessChecker→UserRepository` as a
+path, alongside `SignupService→UserRepository` directly — is still exactly
 the skip-level shape, confirmed by checking it against the formal
 definition rather than assuming clean naming was sufficient. This was
 further checked against Theorem 7 (Parent Independence) to rule out a
@@ -484,16 +474,35 @@ misdiagnosis was checked and ruled out explicitly, not assumed away.
 
 **The honest conclusion.** Both fixes were necessary, and they addressed
 two different, non-substitutable problems: **Step 0 corrects dishonest
-responsibility naming** (a real defect, independent of graph shape a
+responsibility naming** (a real defect, independent of graph shape — a
 node whose sentence needs "and" is wrong regardless of what it's wired
 to), while **Axiom 2 compliance requires an actual structural change**
 (shrinking a dependency from a Node reference to a value) **even after**
 naming is fully honest. Clean responsibility names do not, by themselves,
-guarantee an acyclic-and-unskipped graph, two independently well-named,
+guarantee an acyclic-and-unskipped graph — two independently well-named,
 individually justified Nodes can still converge on a shared target in a
 skip-level shape, and only a structural fix resolves that, not a naming
 fix. Neither step is a substitute for the other; both are required, and
 neither was optional in this case.
+
+### 6.3 Why this matters for refactoring
+
+Because Sibling (shared parent) plus any direct edge between the pair always
+reconstructs a skip-level triangle, **the invariant is self-enforcing, not a
+convention to remember**:
+
+1. **A mechanical test.** For every pair in `~X`, check for any edge between
+   them. Finding one means the graph was never well-formed, or the
+   invariant has eroded since it was built.
+2. **Predictable change.** While Sibling genuinely holds, a change to one
+   member can never directly ripple into the other — only back up through
+   the shared parent's contract (the shielding theorem).
+3. **A dictated repair, not a judgment call.** The Axioms hand you the only
+   two legal fixes: either the direct edge from the shared parent was
+   already redundant (promote the chain, Axiom 3), or the hidden edge
+   should never have existed and the dependency was really just a value
+   (restore Sibling, as above). Which repair applies is answered by running
+   the Dependency Test again on the specific edge in question.
 
 ---
 
@@ -506,15 +515,15 @@ the definitions in §1/§3.
 ### Theorem 1 — Shielding
 
 **Statement.** If `A→B→C` (and, per Axiom 2, `A↛C` directly), then a change
-to `C` affects `A` **only if** that change alters B's observable contract. C's
-influence on `A` is mediated by `B`.
+to C affects A **only if** that change alters B's observable contract. C's
+influence on A is mediated by B.
 
-**Proof.** By Axiom 2, no edge `A→C` exists, A's only route to anything `C`
-provides is through `B`. `A` can only observe C's behavior as it appears
-*through B's interface* (whatever `B` exposes as a result of its own use of
-`C`). If `C` changes internally but B's output/contract to `A` is unchanged, `A`
-has no way to detect or be affected by the change, it never had a channel
-to `C` other than `B`. ∎
+**Proof.** By Axiom 2, no edge `A→C` exists — A's only route to anything C
+provides is through B. A can only observe C's behavior as it appears
+*through B's interface* (whatever B exposes as a result of its own use of
+C). If C changes internally but B's output/contract to A is unchanged, A
+has no way to detect or be affected by the change — it never had a channel
+to C other than B. ∎
 
 **Corollary (Peer Collapse under violation).** If a skip-level edge `A→C`
 is added alongside `A→B→C` (violating Axiom 2), the shield is removed: A
@@ -777,89 +786,6 @@ on; Peer's anchor is fictitious in exactly the direction (`^∅`) that the
 proof would need, which is why Peer is the one relation of the three that
 carries no independence guarantee.
 
-### Theorem 11 — Interface-Layer Sibling Refinement
-
-**Statement.** Sibling, as defined at the Node level (`~A = D(A)`),
-collapses every dependency of A into one flat set. Once Interface Layer
-exists as a distinct primitive, a finer relation is available: for a
-specific Interface Layer member `A+f`, its own dependency set
-`D(A+f) ⊆ D(A)` may be a **strict subset** of A's full dependency set — and
-different members of `C(A)` may have different, non-identical subsets.
-Two Nodes that are Siblings under A (`~A`) are not necessarily Siblings
-under any single Interface Layer member of A — Sibling at the Node level
-does not imply co-usage at the Interface Layer level. Conversely, a Node
-used by *every* Interface Layer member of A is a genuine convergence point
-invisible at the Node-level resolution alone.
-
-**Proof.** By definition, `D(A) = ⋃ over f ∈ C(A) of D(A+f)` — A's total
-dependency set is the union of what each of its Interface Layer members
-individually requires (this must hold, since A can only reach a dependency
-through some member of its own contract implementing that reach). If
-`D(A+f1)` and `D(A+f2)` are not identical subsets of `D(A)` for two
-different members `f1, f2 ∈ C(A)`, then two Nodes `X, Y ∈ ~A` with
-`X ∈ D(A+f1)` and `Y ∈ D(A+f2), X ∉ D(A+f2)` are Siblings at the Node level
-(both in `D(A)`) but are never co-used by any single Interface Layer
-member — no `A+f` depends on both. This is consistent with, not a
-violation of, Theorem 2 (Sibling Independence still holds: X and Y have no
-edge between each other either way) — it is a refinement of *granularity*,
-not a contradiction of the coarser relation. ∎
-
-**Empirical confirmation.** Built a `PaymentProcessor` with three
-dependencies — `DiscountEngine`, `TaxCalculator`, `LoyaltyEngine` — giving
-`~PaymentProcessor = {DiscountEngine, TaxCalculator, LoyaltyEngine}` at the
-Node level, a single flat Sibling set. Two Interface Layer members were
-then defined: `charge(total, itemCount)`, using only `DiscountEngine` and
-`TaxCalculator`, and `chargeWithLoyalty(total)`, using only `LoyaltyEngine`
-and `TaxCalculator`. Checked directly: `DiscountEngine` and `LoyaltyEngine`
-are Siblings at the Node level but share **no** Interface Layer member that
-depends on both — confirmed by reading each method's body, not assumed.
-`TaxCalculator`, by contrast, appears in *both* `D(charge)` and
-`D(chargeWithLoyalty)` — a genuine convergence point that is invisible if
-you only look at `~PaymentProcessor` as one undifferentiated set, and only
-becomes visible once Sibling is checked per Interface Layer member rather
-than per Node.
-
-**Corollary (What this means for refactoring granularity).** Theorem 2's
-refactoring invariant (§6) — "check every Sibling pair for a hidden edge" —
-remains correct at the Node level, but Theorem 11 shows it can be applied
-more precisely: a Node-level Sibling check may pass (no edge between
-`DiscountEngine` and `LoyaltyEngine`) while still leaving a real design
-question unexamined — whether `PaymentProcessor`'s own Interface Layer
-members are cleanly separated by *which* dependencies they actually use, or
-whether every method uses every dependency indiscriminately.
-
-**Corollary (The remedy is Split, not Promote/Demote).** Theorem 11's
-finding is not a visibility problem, so Theorem 6's Promote and Theorem 5's
-Demote do not apply here — both of those remedies operate on whether a
-piece of behavior is reachable from outside a Node, and every member
-involved in Theorem 11's finding is already correctly, legitimately public.
-The actual defect Theorem 11 exposes is **cohesion**: two (or more)
-Interface Layer members whose dependency sets never overlap are candidates
-for living in two separate Nodes rather than one. The correct remedy is a
-third operation, distinct from Promote and Demote — **Split**: partition
-the Node along the boundary Theorem 11 revealed, giving each resulting Node
-its own honest, fully-justified dependency set.
-
-Checked directly: splitting `PaymentProcessor` into `DiscountPayment`
-(`{DiscountEngine, TaxCalculator}`) and `LoyaltyPayment`
-(`{LoyaltyEngine, TaxCalculator}`) preserves identical output for both
-original methods (`97.2` and `102.6`), while resolving the hidden
-multi-responsibility Theorem 11 found. `TaxCalculator` — the genuine
-convergence point identified earlier — correctly remains a Sibling-like
-shared dependency across both resulting Nodes (specifically, both
-`DiscountPayment` and `LoyaltyPayment` now sit in `^TaxCalculator`,
-governed by Theorem 7, Parent Independence, exactly as expected of a real,
-justified shared dependency, not a symptom of anything wrong).
-
-This gives Flow Notation a complete three-remedy vocabulary for contract
-defects, each targeting a different axis: **Promote** (a sub-layer needs
-external reuse — a visibility problem, Theorem 6), **Demote** (an Interface
-Layer member has lost external use — also a visibility problem, Theorem 5),
-and **Split** (a Node's own Interface Layer members don't share dependency
-cohesion — a granularity problem, Theorem 11). None of the three substitute
-for either of the others; each is the dictated repair for a specific,
-distinct, mechanically-detectable condition.
-
 ### Theorem 8 — Composition Recurses Without Limit
 
 **Statement.** A sub-layer `A_B` may itself have its own sub-layer `A_B_C`
@@ -895,7 +821,7 @@ SyntaxError — revealing that flat class-private methods do not create real
 nested black boxes: JS's `#field` privacy is enforced only at the outer
 class boundary, and treats every private method on one class as flatly
 accessible to every other method on that *same* class, with no internal
-nesting between them. `#isNumeric` being "inside" `#validate" was, in that
+nesting between them. `#isNumeric` being "inside" `#validate` was, in that
 version, a naming convention only — never an enforced boundary. Theorem 8's
 proof was not shown false by this — the Black-Box Property doesn't depend
 on which language mechanism enforces it — but the *chosen* mechanism (flat
@@ -1197,9 +1123,110 @@ well-absorbing contracts (small Theorem 9 propagation product) may pose
 behind one leaky contract. Total risk requires both terms multiplied
 together — treating either Theorem 4 or Theorem 9 alone as "the" risk
 measure understates true exposure in either direction.
+
+### Theorem 11 — Interface-Layer Sibling Refinement
+
+**Statement.** Sibling, as defined at the Node level (`~A = D(A)`),
+collapses every dependency of A into one flat set. Once Interface Layer
+exists as a distinct primitive, a finer relation is available: for a
+specific Interface Layer member `A+f`, its own dependency set
+`D(A+f) ⊆ D(A)` may be a **strict subset** of A's full dependency set — and
+different members of `C(A)` may have different, non-identical subsets.
+Two Nodes that are Siblings under A (`~A`) are not necessarily Siblings
+under any single Interface Layer member of A — Sibling at the Node level
+does not imply co-usage at the Interface Layer level. Conversely, a Node
+used by *every* Interface Layer member of A is a genuine convergence point
+invisible at the Node-level resolution alone.
+
+**Proof.** By definition, `D(A) = ⋃ over f ∈ C(A) of D(A+f)` — A's total
+dependency set is the union of what each of its Interface Layer members
+individually requires (this must hold, since A can only reach a dependency
+through some member of its own contract implementing that reach). If
+`D(A+f1)` and `D(A+f2)` are not identical subsets of `D(A)` for two
+different members `f1, f2 ∈ C(A)`, then two Nodes `X, Y ∈ ~A` with
+`X ∈ D(A+f1)` and `Y ∈ D(A+f2), X ∉ D(A+f2)` are Siblings at the Node level
+(both in `D(A)`) but are never co-used by any single Interface Layer
+member — no `A+f` depends on both. This is consistent with, not a
+violation of, Theorem 2 (Sibling Independence still holds: X and Y have no
+edge between each other either way) — it is a refinement of *granularity*,
+not a contradiction of the coarser relation. ∎
+
+**Empirical confirmation.** Built a `PaymentProcessor` with three
+dependencies — `DiscountEngine`, `TaxCalculator`, `LoyaltyEngine` — giving
+`~PaymentProcessor = {DiscountEngine, TaxCalculator, LoyaltyEngine}` at the
+Node level, a single flat Sibling set. Two Interface Layer members were
+then defined: `charge(total, itemCount)`, using only `DiscountEngine` and
+`TaxCalculator`, and `chargeWithLoyalty(total)`, using only `LoyaltyEngine`
+and `TaxCalculator`. Checked directly: `DiscountEngine` and `LoyaltyEngine`
+are Siblings at the Node level but share **no** Interface Layer member that
+depends on both — confirmed by reading each method's body, not assumed.
+`TaxCalculator`, by contrast, appears in *both* `D(charge)` and
+`D(chargeWithLoyalty)` — a genuine convergence point that is invisible if
+you only look at `~PaymentProcessor` as one undifferentiated set, and only
+becomes visible once Sibling is checked per Interface Layer member rather
+than per Node.
+
+**Corollary (What this means for refactoring granularity).** Theorem 2's
+refactoring invariant (§6) — "check every Sibling pair for a hidden edge" —
+remains correct at the Node level, but Theorem 11 shows it can be applied
+more precisely: a Node-level Sibling check may pass (no edge between
+`DiscountEngine` and `LoyaltyEngine`) while still leaving a real design
+question unexamined — whether `PaymentProcessor`'s own Interface Layer
+members are cleanly separated by *which* dependencies they actually use, or
+whether every method uses every dependency indiscriminately.
+
+**Corollary (The remedy is Split, not Promote/Demote).** Theorem 11's
+finding is not a visibility problem, so Theorem 6's Promote and Theorem 5's
+Demote do not apply here — both of those remedies operate on whether a
+piece of behavior is reachable from outside a Node, and every member
+involved in Theorem 11's finding is already correctly, legitimately public.
+The actual defect Theorem 11 exposes is **cohesion**: two (or more)
+Interface Layer members whose dependency sets never overlap are candidates
+for living in two separate Nodes rather than one. The correct remedy is a
+third operation, distinct from Promote and Demote — **Split**: partition
+the Node along the boundary Theorem 11 revealed, giving each resulting Node
+its own honest, fully-justified dependency set.
+
+Checked directly: splitting `PaymentProcessor` into `DiscountPayment`
+(`{DiscountEngine, TaxCalculator}`) and `LoyaltyPayment`
+(`{LoyaltyEngine, TaxCalculator}`) preserves identical output for both
+original methods (`97.2` and `102.6`), while resolving the hidden
+multi-responsibility Theorem 11 found. `TaxCalculator` — the genuine
+convergence point identified earlier — correctly remains a Sibling-like
+shared dependency across both resulting Nodes (specifically, both
+`DiscountPayment` and `LoyaltyPayment` now sit in `^TaxCalculator`,
+governed by Theorem 7, Parent Independence, exactly as expected of a real,
+justified shared dependency, not a symptom of anything wrong).
+
+This gives Flow Notation a complete three-remedy vocabulary for contract
+defects, each targeting a different axis: **Promote** (a sub-layer needs
+external reuse — a visibility problem, Theorem 6), **Demote** (an Interface
+Layer member has lost external use — also a visibility problem, Theorem 5),
+and **Split** (a Node's own Interface Layer members don't share dependency
+cohesion — a granularity problem, Theorem 11). None of the three substitute
+for either of the others; each is the dictated repair for a specific,
+distinct, mechanically-detectable condition.
+
+---
+
+## Code examples
+
+Every claim in this document that could be tested against real code was
+tested — including the ones that failed on the first attempt and had to be
+corrected (see `§6.2` and Theorem 8's empirical confirmation for two examples
+where the first version was wrong, and the document says so explicitly).
+
+| File | Tests |
+|---|---|
+| `examples/sibling-example.js` | Theorem 2 (Sibling Independence) — a hidden edge between Siblings, found and fixed |
+| `examples/sublayer-example.js` | The Black-Box Property — private methods as a first attempt at Composition |
+| `examples/theorem5-test.js` | Theorem 6 (Composition Lock-In) — Duplicate vs. Promote, both built and run |
+| `examples/theorem5-demotion.js` | Theorem 5 corollary — demoting an Interface Layer member to a sub-layer |
+| `examples/theorem8-nested-composition.js` | Theorem 8 — the failed flat-private-method attempt, then the corrected nested-class version |
+| `examples/theorem10-real.js` | Theorem 10 — exposure formula applied to a real 4-node chain, weight and `p_i` estimated from actual code |
 | `examples/theorem11-interface-granularity.js` | Theorem 11 — Interface Layer dependency sets diverging within one Node |
 | `examples/theorem11-split-remedy.js` | Theorem 11's Split remedy — verified behavior-identical before and after |
 | `examples/messy-checkout.js` | An unengineered messy example — found and fixed a real hidden edge (Discount → Cart) |
-| `examples/messy-signup.js` / `examples/messy-signup-fixed.js` / `examples/messy-signup-step0.js` | The hardest case in this document — a real skip-level violation where both edges passed the Dependency Test, requiring two separate, non-substitutable fixes (§6.1) |
+| `examples/messy-signup.js` / `examples/messy-signup-fixed.js` / `examples/messy-signup-step0.js` | The hardest case in this document — a real skip-level violation where both edges passed the Dependency Test, requiring two separate, non-substitutable fixes (`§6.2`) |
 
 Every file runs standalone with `node examples/<filename>.js`.
