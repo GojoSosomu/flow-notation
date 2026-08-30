@@ -76,7 +76,7 @@ responsibility or an edge is in doubt.
    > meaningless without B — or does A merely happen to hold/pass/contain
    > B as incidental content?
 
-   - Breaks without B → real dependency → **A→B** is a true edge.
+   - Breaks without `B` → real dependency → `A→B` is a true edge.
    - Survives fine (just empty/generic) without B → **no edge** — B was
      decorative, not structural.
 
@@ -284,7 +284,7 @@ Parent coexist without contradiction — different axes.
 equal length. No Axiom 2 violation: A never touches D directly.
 
 **Asymmetric diamond:** `A→B→D`, `A→C→E→D` ⟹ `~A = {B, C}`, but `^D =
-{B, E}` — **C is excluded from ^D** despite being an ancestor of D, because
+{B, E}` — **`C` is excluded from `^D`** despite being an ancestor of `D`, because
 C's edge terminates at E, not D. The two sets diverge once path lengths
 differ; overlap in the symmetric case was coincidental, not structural.
 
@@ -293,8 +293,8 @@ Programs: Storyline (holds story data, exposes `getStoryline()`), Story
 Runner (executes a story), Story Setup (prepares Storyline, retrieves data,
 hands off to Runner).
 
-Naive first pass suggested a triangle (Setup→Storyline, Setup→Runner,
-Runner→Storyline) — which violates Axiom 2 (Setup reaches Storyline both
+Naive first pass suggested a triangle (`Setup→Storyline`, `Setup→Runner`,
+`Runner→Storyline`) — which violates Axiom 2 (Setup reaches Storyline both
 directly and via Runner).
 
 Recalibrating against "Setup" taken literally — *prepare, then hand off* —
@@ -303,7 +303,7 @@ resolves it: Setup fetches the storyline value itself and passes the
 receiving data, not by holding a live dependency on the Storyline program.
 
 Final: `StorySetup → StoryLine`, `StorySetup → StoryRunner`,
-**no edge Runner→Storyline.** No skip-level, minimal fan-out satisfied,
+**no edge `Runner→Storyline`.** No skip-level, minimal fan-out satisfied,
 `~StorySetup = {StoryLine, StoryRunner}`.
 
 **Enrollment example (Dependency Test in action):**
@@ -1218,10 +1218,10 @@ where the first version was wrong, and the document says so explicitly).
 
 | File | Tests |
 |---|---|
-| `examples/sibling-example.js` | Theorem 2 (Sibling Independence) — a hidden edge between Siblings, found and fixed |
 | `examples/sublayer-example.js` | The Black-Box Property — private methods as a first attempt at Composition |
-| `examples/theorem5-test.js` | Theorem 6 (Composition Lock-In) — Duplicate vs. Promote, both built and run |
+| `examples/sibling-example.js` | Theorem 2 (Sibling Independence) — a hidden edge between Siblings, found and fixed |
 | `examples/theorem5-demotion.js` | Theorem 5 corollary — demoting an Interface Layer member to a sub-layer |
+| `examples/theorem6-promotion.js` | Theorem 6 (Composition Lock-In) — Duplicate vs. Promote, both built and run |
 | `examples/theorem8-nested-composition.js` | Theorem 8 — the failed flat-private-method attempt, then the corrected nested-class version |
 | `examples/theorem10-real.js` | Theorem 10 — exposure formula applied to a real 4-node chain, weight and `p_i` estimated from actual code |
 | `examples/theorem11-interface-granularity.js` | Theorem 11 — Interface Layer dependency sets diverging within one Node |
