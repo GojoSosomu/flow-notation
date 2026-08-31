@@ -57,6 +57,11 @@ Axioms — they are not additional rules, they are guaranteed consequences.
 Nothing in §7 could be false while the Axioms hold; that's what makes them
 theorems rather than more design guidance.
 
+The goal of Flow Notation is to reason through an entire program's architecture
+— using its methodology and the Dependency Test to establish what's genuinely true,
+then applying the Axioms and Theorems to produce a more cohesive and comprehensible
+program.
+
 ---
 
 ## 0. Methodology — "Rename, Recalibrate, Readjust"
