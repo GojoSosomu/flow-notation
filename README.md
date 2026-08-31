@@ -746,37 +746,53 @@ are Duplicate or Promote — and Promote is the moment a piece of Composition
 graduates into the outer graph, becoming subject to Axioms 1–3 and Theorems
 1–4 for the first time, exactly like any other Node.
 
-Corollary (A third option — Interface Wrapping, when the second consumer is 
-internal). Theorem 6's Duplicate-or-Promote dilemma assumes the second 
-consumer is external to the Node already holding the sub-layer. A distinct, 
-equally legal third option exists when the situation is instead: one Node's 
-own multiple Interface Layer members need to share a private sub-layer, and 
-an external Node also needs that same underlying capability. Rather than 
-promoting the sub-layer to a fully independent Node (exposing it to the whole graph) 
-or duplicating its logic, the sub-layer can stay private while the Node 
-exposes a second Interface Layer member that internally reaches it — A+f1 → A_sub and A+f2 → A_sub 
-both hold, with A_sub never leaving A's black box.
-
-Checked directly: CreditValidator held a private sub-layer #score, used internally 
-by check(). When OrderApprover needed the same scoring capability for its own, separate
-purpose, the resolution was neither Duplicate (copy #score's logic into OrderApprover) 
-nor Promote (extract #score into its own top-level Node) — it was exposing a second 
-Interface Layer member, getScore(), which internally calls the same private #score. 
-OrderApprover now depends on CreditValidator through exactly one Node-level edge (A→B), 
-while internally B+check and B+getScore form a Parent relation with respect to the 
-shared sub-layer (^#score = {check, getScore}), entirely invisible from outside B. 
-Verified behavior-identical to every prior version of this scenario, 
-while collapsing what was originally three Nodes and three edges (A→B, A→C, B→C)
-down to one Node and one edge (A→B).
-
-This gives Composition a fourth named operation, alongside Duplicate, Promote, 
-and Theorem 11's Split: Interface Wrap — demote a would-be second public capability 
-into a private sub-layer, then re-expose access to it through a new, honest Interface Layer 
-member on the same Node, rather than through a new Node or a copy. It is the correct 
-choice specifically when the "second consumer" turns out not to need an independent 
-Node at all — only a legitimate, contract-level door into a capability that was always 
-more honestly described as one Node's private implementation than as its own standalone 
-responsibility.
+**Corollary (A fourth option — Interface Wrap).** Theorem 6's
+Duplicate-or-Promote dilemma assumes a shared capability must either be
+copied or fully exposed as its own independent Node. A third, general
+operation exists: **push the capability down into a single private**
+**sub-layer, then build one honest Interface Layer member per genuinely**
+**distinct consumer, each independently justified by the Dependency Test.**
+ 
+This is one operation, not two, regardless of where the capability
+originated:
+ 
+- **Source is a separate Node.** A capability previously living in its own
+  Node (e.g. `FraudScorer`) is absorbed into the Node that needs it most
+  (`CreditValidator`, as `#score`), eliminating the separate Node entirely
+  rather than promoting or duplicating it.
+- **Source is an existing Interface Layer member.** A capability already
+  public under one name (e.g. `RiskEngine.score`) is pushed down into a
+  private sub-layer (`#computeRisk`) the moment a second consumer needs the
+  *same computation* for a genuinely different purpose, and a new member is
+  built alongside the original for that purpose (`auditReport`, returning a
+  formatted report rather than a raw number).
+In both cases the end state is identical: one private sub-layer, N honest
+Interface Layer members, one per distinct need — `A+f1 → A_sub`,
+`A+f2 → A_sub`, ..., with `A_sub` never leaving A's black box. The origin
+of the capability changes only *how* the private sub-layer is arrived at;
+it never changes what the fix looks like once applied.
+ 
+Checked directly, twice, on independent scenarios. First: `CreditValidator`
+held a private sub-layer `#score`, absorbed from what was originally a
+separate `FraudScorer` Node. When `OrderApprover` needed the same scoring
+capability for its own, separate purpose, a second Interface Layer member,
+`getScore()`, was built rather than duplicating or promoting — collapsing
+three Nodes and three edges (`A→B`, `A→C`, `B→C`) down to one Node and one
+edge (`A→B`), with `^#score = {check, getScore}` forming entirely inside
+`CreditValidator`'s own black box. Second: `RiskEngine.score()`, already an
+existing public member, had its computation pushed down into a private
+`#computeRisk` the moment a second consumer (`Auditor`) needed the same
+computation with different output semantics; `score()` and `auditReport()`
+now both call the same sub-layer independently, verified to run correctly
+side by side with no interference between them.
+ 
+This gives Composition a fourth named operation, alongside Duplicate,
+Promote, and Theorem 11's Split: **Interface Wrap.** It is the correct
+choice whenever a shared capability turns out not to need an independent
+Node at all — only as many legitimate, contract-level doors into it as
+there are genuinely distinct consumers, regardless of whether that
+capability started as a separate Node, an existing public method, or was
+never built until the second consumer's need revealed it was needed.
 
 ### Theorem 7 — Parent Independence
 
@@ -1259,7 +1275,8 @@ where the first version was wrong, and the document says so explicitly).
 | `examples/sibling-example.js` | Theorem 2 (Sibling Independence) — a hidden edge between Siblings, found and fixed |
 | `examples/theorem5-demotion.js` | Theorem 5 corollary — demoting an Interface Layer member to a sub-layer |
 | `examples/theorem6-promotion.js` | Theorem 6 (Composition Lock-In) — Duplicate vs. Promote, both built and run |
-| `examples/theorem6-all-three-challenge-demotion.js` | Theorem 6 corollary — Interface Wrapping when promotion failed |
+| `examples/theorem6-node-interface-wrapping.js` | Theorem 6 corollary — Applied in Node Level |
+| `examples/theorem6-interface-interface-wrapping.js` | Theorem 6 corollary — Applied in Interface Level |
 | `examples/theorem8-nested-composition.js` | Theorem 8 — the failed flat-private-method attempt, then the corrected nested-class version |
 | `examples/theorem10-real.js` | Theorem 10 — exposure formula applied to a real 4-node chain, weight and `p_i` estimated from actual code |
 | `examples/theorem11-interface-granularity.js` | Theorem 11 — Interface Layer dependency sets diverging within one Node |
