@@ -1,5 +1,5 @@
 // ============================================================
-// Theorem 5 test: a second Node, Sensor, also needs to validate
+// Theorem 6 test: a second Node, Sensor, also needs to validate
 // numeric input — the exact same rule as Machine_validate.
 // Per Theorem 5: Sensor cannot reach Machine_validate directly.
 // It has exactly two options. Let's try both and see what
