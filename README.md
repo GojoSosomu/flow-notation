@@ -57,11 +57,6 @@ Axioms — they are not additional rules, they are guaranteed consequences.
 Nothing in §7 could be false while the Axioms hold; that's what makes them
 theorems rather than more design guidance.
 
-The goal of Flow Notation is to reason through an entire program's architecture
-— using its methodology and the Dependency Test to establish what's genuinely true,
-then applying the Axioms and Theorems to produce a more cohesive and comprehensible
-program.
-
 ---
 
 ## 0. Methodology — "Rename, Recalibrate, Readjust"
@@ -749,13 +744,13 @@ graduates into the outer graph, becoming subject to Axioms 1–3 and Theorems
 **Corollary (A fourth option — Interface Wrap).** Theorem 6's
 Duplicate-or-Promote dilemma assumes a shared capability must either be
 copied or fully exposed as its own independent Node. A third, general
-operation exists: **push the capability down into a single private**
-**sub-layer, then build one honest Interface Layer member per genuinely**
-**distinct consumer, each independently justified by the Dependency Test.**
- 
+operation exists: **push the capability down into a single private
+sub-layer, then build one honest Interface Layer member per genuinely
+distinct consumer, each independently justified by the Dependency Test.**
+
 This is one operation, not two, regardless of where the capability
 originated:
- 
+
 - **Source is a separate Node.** A capability previously living in its own
   Node (e.g. `FraudScorer`) is absorbed into the Node that needs it most
   (`CreditValidator`, as `#score`), eliminating the separate Node entirely
@@ -766,12 +761,13 @@ originated:
   *same computation* for a genuinely different purpose, and a new member is
   built alongside the original for that purpose (`auditReport`, returning a
   formatted report rather than a raw number).
+
 In both cases the end state is identical: one private sub-layer, N honest
 Interface Layer members, one per distinct need — `A+f1 → A_sub`,
 `A+f2 → A_sub`, ..., with `A_sub` never leaving A's black box. The origin
 of the capability changes only *how* the private sub-layer is arrived at;
 it never changes what the fix looks like once applied.
- 
+
 Checked directly, twice, on independent scenarios. First: `CreditValidator`
 held a private sub-layer `#score`, absorbed from what was originally a
 separate `FraudScorer` Node. When `OrderApprover` needed the same scoring
@@ -785,7 +781,7 @@ existing public member, had its computation pushed down into a private
 computation with different output semantics; `score()` and `auditReport()`
 now both call the same sub-layer independently, verified to run correctly
 side by side with no interference between them.
- 
+
 This gives Composition a fourth named operation, alongside Duplicate,
 Promote, and Theorem 11's Split: **Interface Wrap.** It is the correct
 choice whenever a shared capability turns out not to need an independent
@@ -1001,181 +997,203 @@ absorbing contracts can be strictly safer for its root than a five-node
 chain with leaky ones. **Contract quality at each hop, not chain length, is
 the operative variable.**
 
-### Theorem 10 — Combined Exposure (Depth × Width)
-
-**Statement.** The total expected exposure of an ancestor A to a change
-originating at a descendant N, k hops away, is the product of a **width
-term** (Theorem 4: how many dependents are affected once a change arrives)
-and a **depth/propagation term** (Theorem 9: the chance the change reaches
-A at all). Writing `p_i` for the probability that hop `i` passes a change
-through rather than absorbing it, and `weight(N)` for N's Theorem 4 fan-in
-weight:
-
+### Theorem 10 — Combined Exposure (Reachability × Width)
+ 
+**Statement.** The exposure of an ancestor `A` to a change originating at
+descendant `N` is not, in general, a single-path product — it is a
+**recursive reachability function** over `A`'s entire descendant subgraph,
+correctly accounting for nodes reached by more than one route. Writing
+`p(X→Yi)` for the probability that the edge `X→Yi` passes a change through
+rather than absorbing it, and `R(X)` for the probability that a change
+originating below `X` reaches `X`:
+ 
 ```
-Exposure(A, N) = weight(N) × (p_1 × p_2 × ... × p_k)
+R(N)  = 1                                              (the origin itself)
+R(X)  = 1 − Π over Yi ∈ D(X) [ 1 − p(X→Yi) × R(Yi) ]    (every other node)
 ```
-
-Neither Theorem 4 nor Theorem 9 alone gives total systemic risk — width
-tells you how many are exposed *conditional on* the change arriving; the
-propagation product tells you the *chance* it arrives at all. They are
-independently varying factors and must be multiplied, not summed or
-considered in isolation.
-
-**Proof.** By Theorem 4, a change to `fi ∈ C(N)` affects exactly
-`weight(fi)` direct dependents of N, conditional on the change already
-having reached that point — an exposure count, not a probability. By
-Theorem 9, whether the change reaches ancestor A at all depends on the
-chain of contract-preservation between N and A, hop by hop; each hop's
-outcome (absorb or pass through) is a property of that specific link's own
-contract design, independent of what any other hop in the chain does. Since
-one factor is a conditional count and the other is a probability over
-independent events, the combination rule for expected exposure is their
-product across the chain, term by term, per the standard rule for
-combining a magnitude with a chain of independent probabilities. ∎
-
-**Corollary (Homogeneous chains reduce to `p^k`).** If every hop in the
-chain has an equal, uniform, independent chance `p` of passing a change
-through — i.e. the chain is *locally homogeneous* — then
-`p_1 = p_2 = ... = p_k = p`, and the propagation term collapses to `p^k`:
-geometric (exponential) decay in depth. This is the honest homogeneous
-special case of the general theorem — exponential attenuation at whatever
-rate `p` the system's actual contracts happen to exhibit.
-
-**Worked formula — homogeneous case.** For a chain `A→B→C→D`, with every
-hop sharing the same pass-through probability `p`, each node's exposure to
-a change originating at D is `p` raised to its own hop-distance from D:
-
+ 
+`R(A)` is then `A`'s reachability from `N` — the corrected replacement for
+what earlier read as a plain hop-by-hop product. `R(A)` alone **is**
+`Exposure(A, N)`:
+ 
 ```
-A = p³   (3 hops: D→C, C→B, B→A)
-B = p²   (2 hops: D→C, C→B)
-C = p¹   (1 hop:  D→C)
+Exposure(A, N) = R(A)          (with N set as the origin, R(N) = 1)
 ```
-
-Checked numerically with `p = 0.8`: A = 0.512, B = 0.64, C = 0.8 —
-monotonically increasing as distance from the origin shrinks, exactly as
-Theorem 9 predicts qualitatively, now with an exact quantitative rate.
-
-**Worked formula — general (heterogeneous) case.** The natural
-generalization is to give each hop its *own* probability rather than a
-shared `p`, and multiply the origin's Theorem 4 width in once, at the
-origin only — **not at every intermediate node**. For the same chain, with
-D changing a function used with weight `weight(D)`:
-
+ 
+**A weight term was tried here and found to be wrong, not merely
+unnecessary.** An earlier draft multiplied in `weight(N)` — the count of
+*all* of `N`'s direct dependents for a given function (§1) — under the
+assumption that a wider blast radius at the origin should scale up `A`'s
+own exposure. Checked directly with an adversarial case: if `N` has three
+direct dependents and only one of them (`X1`) lies on any path to `A`
+(the other two are unrelated branches that never reach `A` at all),
+`weight(N) = 3` while the true reachability through the one relevant path
+was `0.56` — multiplying gives `1.68`, a number inflated purely by two
+dependents that have nothing to do with `A`. `weight(N)` is a **global**
+count, unscoped to any particular ancestor; `R(A)` is already **correctly
+scoped**, since its recursion only ever walks through nodes that actually
+lie in `A`'s own descendant subgraph. Multiplying an unscoped count into a
+correctly-scoped probability is a category error, not a refinement — the
+fix is to drop `weight(N)` from this formula entirely. `R(A)` alone already
+accounts for every real branch and convergence point between `N` and `A`;
+nothing external needs to be multiplied back in.
+ 
+`weight` is not useless — it answers a different, legitimate question
+(Theorem 4's original one: how many things, in total, are hit when `N`'s
+contract changes, independent of any one ancestor) — it simply does not
+belong inside an ancestor-specific `Exposure(A, N)` figure. Its one correct
+role inside Theorem 10 is covered separately, in the multi-function
+corollary below, where it counts something genuinely different: not
+*dependents of N*, but *distinct usable functions of N*, each with its own
+independently-computed `R(A)`.
+ 
+**Why this replaces a plain product.** The original formulation,
+`weight(N) × (p_1 × p_2 × ... × p_k)`, had two separate problems, both
+confirmed by direct testing rather than assumed. First, it is correct only
+when there is exactly **one** path from `N` to `A` — checked against a
+graph containing two real convergence points (a node with more than one
+direct dependent), where the single-path product could not be applied to
+either one without a further rule the original statement never supplied;
+the correct combined probability that a change reaches `A` by *at least
+one* of several independent routes is `1 − Π(1 − p_i)`, not any single
+path's product, and never a sum (which can exceed 1 and answers a
+different question). Second, the `weight(N)` term itself was wrong to
+include at all, once `R(A)`'s scoped recursion existed — this is addressed
+directly above.
+ 
+**Proof.** `R(X)`'s recursive step is the direct generalization of the
+standard independent-OR rule to an arbitrary number of parents-in-the-
+propagation-graph: the probability that *none* of `X`'s direct dependents
+carry the change through is the product of each one individually failing
+to do so, `Π [1 − p(X→Yi) × R(Yi)]`, since each `Yi`'s route is independent
+of every other `Yi`'s route by construction (each edge's `p` is a property
+of that specific contract alone). The probability that *at least one*
+route succeeds is the complement of all of them failing, giving the stated
+recursive step. When every node on the path from `N` to `A` has exactly one
+dependent, the product at each step has only one term, and
+`1 − (1 − z) = z` algebraically for any single `z` — so `R(X)` collapses
+identically to the original plain product whenever there is no
+convergence, confirmed numerically on a five-hop single chain (`R = p1 ×
+p2 × p3 × p4 × p5` exactly, to four decimal places). The recursion
+correctly generalizes the old formula rather than replacing it outright:
+the old formula is `R`'s single-path special case, not a separate, wrong
+idea. ∎
+ 
+**Worked check — a real convergent graph.** For `A→B→C→D→E`, `A→F→G→D`,
+`A→H→I→C` (two convergence points: `D` has parents `{C, G}`, `C` has
+parents `{B, I}`), computing `R` bottom-up with assigned edge
+probabilities gives `R(C) ≈ 0.8165`, `R(D) ≈ 0.7013`, `R(E) ≈ 0.561` —
+each properly combining both of its routes upward via the OR-rule, rather
+than reflecting only one arbitrarily chosen path. Naively computing via a
+single path through `D` alone (ignoring the `G` route) would have
+understated `R(D)`; computing via `G` alone would have understated it
+differently. Only the recursive combination gives the correct value.
+ 
+**Corollary (Total exposure across an entire subgraph).** `A`'s full
+exposure is not bound to one chosen origin `N` — every node in `A`'s
+descendant subgraph is a potential, independent source of change. Summing
+`R(A ← N)` (computed with `N` set as the origin, `R(N)=1`) across every
+such `N` gives a single scalar describing `A`'s total exposure to its
+entire dependency subgraph at once:
+ 
 ```
-Exposure(A, D) = weight(D) · p_(D→C) · p_(C→B) · p_(B→A)
-Exposure(B, D) = weight(D) · p_(D→C) · p_(C→B)
-Exposure(C, D) = weight(D) · p_(D→C)
+TotalExposure(A) = Σ over every node N in A's descendant subgraph [ R(A ← N) ]
 ```
-
-This was checked against a tempting but incorrect alternative: folding in
-*every* intermediate node's own fan-in width (`weight(C)`, `weight(B)`, not
-just `weight(D)`) at each stage of the product. Numerically, this
-overcounts severely — with `weight(D)=1`, a modest `weight(C)=5`, and
-`p=0.8` throughout, the correct formula gives `Exposure(A,D) ≈ 0.51`, while
-folding in intermediate widths gives `≈ 7.68`, a value with no sensible
-interpretation as a bounded exposure measure. The error is a category
-mix-up: `weight(C)` counts *C's own, separate* set of dependents, most of
-whom are not on the path to A at all — their exposure is a different,
-independent calculation, not a multiplier on A's specific exposure to a
-change at D. Only the **origin's** width belongs in the product; every
-other node in the chain contributes a pass-through *probability*, not an
-additional width term. Setting every `p_i = p` in the general formula
-correctly reduces it to the homogeneous special case above.
-
+ 
+`weight` does not appear here either, for the same reason it was dropped
+from the single-origin formula: each `R(A←N)` term is already correctly
+scoped to `A`'s own subgraph, and multiplying in `N`'s total dependent
+count would reintroduce the same over-counting confirmed above. Checked on
+the same convergent test graph: summing each node's individually-computed
+reachability to `A` gives a total scalar of `≈ 6.09` — this number is
+unchanged from the earlier (incorrect) version of this corollary, because
+that version used `weight = 1` for every node "for simplicity," which
+silently made the bug inert in that specific worked example (multiplying
+by 1 changes nothing) — the number was never wrong, only the formula
+written beside it was. As with the multi-function corollary below, this
+total is an **expected count of independent exposure events**, not a
+probability — it is expected to exceed 1 once a subgraph has more than a
+couple of plausible origins, and that is the correct, informative reading,
+not an error to correct.
+ 
+**Corollary (Homogeneous single-path chains reduce to `p^k`).** When there
+is no convergence anywhere on the path and every hop shares one uniform
+probability `p`, `R` collapses to `p^k` — geometric decay in depth, exactly
+as originally stated, now confirmed as the correct special case rather
+than the general rule.
+ 
 **Corollary (What is actually measurable — `weight` vs. `p`).** The two
 terms in the formula are not equally obtainable from real code, and this
 matters for anyone trying to apply Theorem 10 rather than just state it:
-
+ 
 - **`weight(N)` is directly countable.** It is defined (§1) as
   `|{ Y ∈ ^A : fi ∈ U(Y,A) }|` — the number of dependents whose code
   actually calls a given function. This can be measured mechanically, by
   reading call sites, for any real codebase. It is not arbitrary.
-- **`p_i` is not directly countable in the same way.** It asks a
+- **`p(X→Yi)` is not directly countable in the same way.** It asks a
   counterfactual — if this dependency's contract changed, would this
   hop's own contract also have to change — which is not a fact sitting in
   the current code, only in how tightly that specific boundary is
-  designed. In practice, `p_i` is either (a) a design-time estimate, where
-  a thin, stable, well-abstracted interface is assigned a low `p` and a
+  designed. In practice, `p` is either (a) a design-time estimate, where a
+  thin, stable, well-abstracted interface is assigned a low `p` and a
   leaky, pass-through interface is assigned a high `p`, or (b) an
   empirical estimate drawn from version-history data, if available — e.g.
   how often a change at the dependency historically forced a matching
   change at this hop, across past releases.
-
-Flow Notation gives the exact combination rule once `p_i` values are known
-(Theorem 10's formula), but it does not itself supply a mechanical
-procedure for obtaining `p_i` the way it does for `weight`. This is a real
-limitation to state plainly, not a gap to paper over: the width term is an
-observation; the propagation term is a judgment or an estimate.
-
-**Corollary (Multiple contract members, summed exposure).** A single Node
-may expose more than one function in `C(D)`, each independently subject to
-its own change and its own chain of `p_i` values. Theorem 10 as proven
-gives `Exposure(A, N)` **per specific changing function**, not per Node as
-a whole. When a Node's contract has multiple used functions, the ancestor's
-combined exposure is the **sum across functions**, not a single shared
-probability:
-
+A node-intrinsic term — call it `t(X)`, the baseline chance `X` is edited
+directly, independent of anything it depends on — was considered as a
+further refinement (folding `t(X)` into `R(X)`'s recursive step as an
+additional independent OR-term at every node, not only at leaves). It was
+confirmed, by direct test, to be **conceptually distinct from and not
+derivable from `p`**: two structurally identical leaves can have wildly
+different real-world edit frequency with no edge to attach that difference
+to, and a leaf edited constantly under a well-shielded contract can still
+contribute almost nothing to its parent's exposure (`t` high, `p` low,
+their product low) — confirming the two must remain independent factors,
+never conflated. `t(X)` is deliberately **not** included in the formula
+above: it would require estimating a volatility figure for every node in a
+subgraph, an even harder estimation burden than `p` already is, and the
+formula as stated (`R(N)=1` at a chosen origin) already answers the more
+tractable, still-useful question — *given* a change at a specific point,
+how far does it spread — without requiring an estimate of how likely that
+originating change was in the first place. `t(X)` is documented here as
+an open, deliberately-excluded extension, not a gap that was missed.
+ 
+Flow Notation gives the exact combination rule once `p` and `weight` values
+are known, but it does not itself supply a mechanical procedure for
+obtaining `p` the way it does for `weight`. This is a real limitation to
+state plainly, not a gap to paper over: the width term is an observation;
+the propagation term is a judgment or an estimate.
+ 
+**Corollary (Unpacking an expected value into a real distribution).** A sum
+like `1.7`, arising when a Node's contract has multiple independently-used
+functions, should not be read as "one function's exposure is certain and a
+second is likely" — that implies one term equals 1, which is rarely true.
+The correct unpacking, for two independent exposures `p1`, `p2`, is the
+full distribution over how many of them actually reach the ancestor:
+ 
 ```
-TotalExposure(A, D) = Σ over fi ∈ C(D) of Exposure(A, fi)
+P(neither reaches)     = (1−p1)(1−p2)
+P(exactly one reaches) = p1(1−p2) + (1−p1)p2
+P(both reach)          = p1·p2
 ```
-
-This sum is best read as an **expected count of exposure events**, not a
-probability — it can legitimately exceed 1 once enough independent
-contract members are in play, which is expected and correct: it means more
-than one distinct change could plausibly hit the ancestor, not that a
-single event is "more than certain." Treating the sum as a probability
-would be a category error; treating it as an expected-exposure magnitude
-(more surface area exposed to more independent risks) is the correct
-reading.
-
-**Corollary (Unpacking the expected value into a real distribution).** A
-sum like `1.7` should not be read as "one function's exposure is certain
-and a second is likely" — that implies one term equals 1, which is rarely
-true. The correct unpacking, for two independent exposures `p1`, `p2`, is
-the full distribution over how many of them actually reach the ancestor:
-
-```
-P(neither reaches)  = (1-p1)(1-p2)
-P(exactly one reaches) = p1(1-p2) + (1-p1)p2
-P(both reach)        = p1·p2
-```
-
-Checked numerically for `p1=0.9, p2=0.8` (the two RawDataStore functions'
-exposure to Aggregator): `P(neither)=0.02`, `P(exactly one)=0.26`,
-`P(both)=0.72` — summing to 1, with expected value
-`0(0.02)+1(0.26)+2(0.72)=1.7`, matching the simple sum `p1+p2` exactly (as
-it must, by linearity of expectation, regardless of independence). The
-sharper, more informative reading of `1.7` here is not "one is certain, a
-second is likely" but **"the dominant single outcome, at 72%, is that both
-functions' changes reach this node — it is the double-hit case driving the
-expectation up, not a near-certain single hit."** The simple sum (`p1+p2`)
-is always correct as an expectation, but recovering the full distribution,
-where feasible, gives a materially sharper picture than the sum alone.
-
-**Worked check — adding a second used function to D's contract.** Suppose
-`RawDataStore` exposes a second function, `getRecordCount`, initially
-unused (Theorem 5 flags it as dead surface, `weight=0`, per the earlier
-worked example). If a later change makes `Aggregator` actually call it
-(e.g. to compute an average), `weight(getRecordCount)` becomes `1`, and A's
-total exposure to D rises from a single term to the sum of two terms —
-concretely, in a case where `p_(D→C)=0.9` for the first function and
-`p_(D→C)=0.8` for the second, with `p_(C→B)=0.4` and `p_(B→A)=0.3`
-unchanged for both (Formatter and ReportGenerator's own contracts didn't
-change shape), A's exposure roughly doubles (from `≈0.108` to `≈0.204`),
-even though chain length and every intermediate `p_i` stayed identical.
-**This is the correct, quantified version of a fact Theorem 5 could only
-state qualitatively before:** turning previously-dead contract surface
-into used surface does not just resolve a Theorem 5 violation — it has a
-measurable Theorem 10 cost, additive across every used function in the
-contract.
-
-**Corollary (Why neither theorem alone is sufficient).** A node with
+ 
+Checked numerically for `p1=0.9, p2=0.8`: `P(neither)=0.02`,
+`P(exactly one)=0.26`, `P(both)=0.72` — summing to 1, with expected value
+`0(0.02)+1(0.26)+2(0.72)=1.7`, matching the simple sum exactly (as it must,
+by linearity of expectation, regardless of independence). The sharper
+reading of `1.7` is not "one is certain, a second is likely" but "the
+dominant single outcome, at 72%, is that both functions' changes reach this
+node" — the full distribution, where feasible, gives a materially sharper
+picture than the sum alone.
+ 
+**Corollary (Why width and reachability are both necessary).** A node with
 enormous `|^X|` (large Theorem 4 width) sitting behind several
-well-absorbing contracts (small Theorem 9 propagation product) may pose
-*less* real systemic risk than a node with small `|^X|` sitting directly
-behind one leaky contract. Total risk requires both terms multiplied
-together — treating either Theorem 4 or Theorem 9 alone as "the" risk
-measure understates true exposure in either direction.
+well-absorbing, non-convergent contracts (small `R`) may pose *less* real
+systemic risk than a node with small `|^X|` sitting directly behind one
+leaky, or heavily convergent, path. Total risk requires both terms
+multiplied together — treating either width or reachability alone as "the"
+risk measure understates true exposure in either direction.
 
 ### Theorem 11 — Interface-Layer Sibling Refinement
 
@@ -1271,14 +1289,15 @@ where the first version was wrong, and the document says so explicitly).
 
 | File | Tests |
 |---|---|
-| `examples/sublayer-example.js` | The Black-Box Property — private methods as a first attempt at Composition |
 | `examples/sibling-example.js` | Theorem 2 (Sibling Independence) — a hidden edge between Siblings, found and fixed |
+| `examples/sublayer-example.js` | The Black-Box Property — private methods as a first attempt at Composition |
+| `examples/theorem5-test.js` | Theorem 6 (Composition Lock-In) — Duplicate vs. Promote, both built and run |
 | `examples/theorem5-demotion.js` | Theorem 5 corollary — demoting an Interface Layer member to a sub-layer |
-| `examples/theorem6-promotion.js` | Theorem 6 (Composition Lock-In) — Duplicate vs. Promote, both built and run |
-| `examples/theorem6-node-interface-wrapping.js` | Theorem 6 corollary — Applied in Node Level |
-| `examples/theorem6-interface-interface-wrapping.js` | Theorem 6 corollary — Applied in Interface Level |
+| `examples/theorem6-interface-wrap.js` | Theorem 6 corollary — Interface Wrap, a fourth remedy: absorb a capability (originally a separate Node) into a private sub-layer, then build a second Interface Layer member on the same Node |
+| `examples/theorem6-interface-wrap-generalized.js` | Interface Wrap generalized — same operation when the source is an existing Interface Layer member, not a separate Node: push it into a private sub-layer, build one honest doorway per distinct consumer |
 | `examples/theorem8-nested-composition.js` | Theorem 8 — the failed flat-private-method attempt, then the corrected nested-class version |
 | `examples/theorem10-real.js` | Theorem 10 — exposure formula applied to a real 4-node chain, weight and `p_i` estimated from actual code |
+| `examples/theorem10-refined-reachability.js` | Theorem 10, refined — recursive `R(X)` correctly handling convergence points (a node with more than one parent), confirmed on a graph with two real convergence points |
 | `examples/theorem11-interface-granularity.js` | Theorem 11 — Interface Layer dependency sets diverging within one Node |
 | `examples/theorem11-split-remedy.js` | Theorem 11's Split remedy — verified behavior-identical before and after |
 | `examples/messy-checkout.js` | An unengineered messy example — found and fixed a real hidden edge (Discount → Cart) |
