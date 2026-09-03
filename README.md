@@ -26,6 +26,10 @@ Full license text: https://creativecommons.org/licenses/by/4.0/
 - [5. The Dependency Test (summary)](#5-the-dependency-test-summary)
 - [6. Sibling as a Refactoring Invariant](#6-sibling-as-a-refactoring-invariant)
 - [7. Theorems](#7-theorems) (11 theorems, each proven and empirically tested)
+- [8. Beyond the Axioms — Applied Models](#8-beyond-the-axioms--applied-models) (not proven; kept structurally separate from §7)
+  - [8.1 Analogy — The Load Path](#81-analogy--the-load-path)
+  - [8.2 Beyond the Model](#82-beyond-the-model)
+  - [8.3 Implications of Flow Notation, as of now](#83-implications-of-flow-notation-as-of-now)
 - [Code examples](#code-examples)
 
 **Code examples referenced throughout this document** are included
@@ -998,7 +1002,7 @@ chain with leaky ones. **Contract quality at each hop, not chain length, is
 the operative variable.**
 
 ### Theorem 10 — Combined Exposure (Reachability × Width)
- 
+
 **Statement.** The exposure of an ancestor `A` to a change originating at
 descendant `N` is not, in general, a single-path product — it is a
 **recursive reachability function** over `A`'s entire descendant subgraph,
@@ -1006,20 +1010,20 @@ correctly accounting for nodes reached by more than one route. Writing
 `p(X→Yi)` for the probability that the edge `X→Yi` passes a change through
 rather than absorbing it, and `R(X)` for the probability that a change
 originating below `X` reaches `X`:
- 
+
 ```
 R(N)  = 1                                              (the origin itself)
 R(X)  = 1 − Π over Yi ∈ D(X) [ 1 − p(X→Yi) × R(Yi) ]    (every other node)
 ```
- 
+
 `R(A)` is then `A`'s reachability from `N` — the corrected replacement for
 what earlier read as a plain hop-by-hop product. `R(A)` alone **is**
 `Exposure(A, N)`:
- 
+
 ```
 Exposure(A, N) = R(A)          (with N set as the origin, R(N) = 1)
 ```
- 
+
 **A weight term was tried here and found to be wrong, not merely
 unnecessary.** An earlier draft multiplied in `weight(N)` — the count of
 *all* of `N`'s direct dependents for a given function (§1) — under the
@@ -1037,7 +1041,7 @@ correctly-scoped probability is a category error, not a refinement — the
 fix is to drop `weight(N)` from this formula entirely. `R(A)` alone already
 accounts for every real branch and convergence point between `N` and `A`;
 nothing external needs to be multiplied back in.
- 
+
 `weight` is not useless — it answers a different, legitimate question
 (Theorem 4's original one: how many things, in total, are hit when `N`'s
 contract changes, independent of any one ancestor) — it simply does not
@@ -1046,7 +1050,7 @@ role inside Theorem 10 is covered separately, in the multi-function
 corollary below, where it counts something genuinely different: not
 *dependents of N*, but *distinct usable functions of N*, each with its own
 independently-computed `R(A)`.
- 
+
 **Why this replaces a plain product.** The original formulation,
 `weight(N) × (p_1 × p_2 × ... × p_k)`, had two separate problems, both
 confirmed by direct testing rather than assumed. First, it is correct only
@@ -1060,7 +1064,7 @@ path's product, and never a sum (which can exceed 1 and answers a
 different question). Second, the `weight(N)` term itself was wrong to
 include at all, once `R(A)`'s scoped recursion existed — this is addressed
 directly above.
- 
+
 **Proof.** `R(X)`'s recursive step is the direct generalization of the
 standard independent-OR rule to an arbitrary number of parents-in-the-
 propagation-graph: the probability that *none* of `X`'s direct dependents
@@ -1078,7 +1082,7 @@ p2 × p3 × p4 × p5` exactly, to four decimal places). The recursion
 correctly generalizes the old formula rather than replacing it outright:
 the old formula is `R`'s single-path special case, not a separate, wrong
 idea. ∎
- 
+
 **Worked check — a real convergent graph.** For `A→B→C→D→E`, `A→F→G→D`,
 `A→H→I→C` (two convergence points: `D` has parents `{C, G}`, `C` has
 parents `{B, I}`), computing `R` bottom-up with assigned edge
@@ -1088,22 +1092,22 @@ than reflecting only one arbitrarily chosen path. Naively computing via a
 single path through `D` alone (ignoring the `G` route) would have
 understated `R(D)`; computing via `G` alone would have understated it
 differently. Only the recursive combination gives the correct value.
- 
+
 **Corollary (Total exposure across an entire subgraph).** `A`'s full
 exposure is not bound to one chosen origin `N` — every node in `A`'s
 descendant subgraph is a potential, independent source of change. Summing
 `R(A ← N)` (computed with `N` set as the origin, `R(N)=1`) across every
 such `N` gives a single scalar describing `A`'s total exposure to its
 entire dependency subgraph at once:
- 
+
 ```
 TotalExposure(A) = Σ over every node N in A's descendant subgraph [ R(A ← N) ]
 ```
- 
+
 `weight` does not appear here either, for the same reason it was dropped
 from the single-origin formula: each `R(A←N)` term is already correctly
 scoped to `A`'s own subgraph, and multiplying in `N`'s total dependent
-count would reintroduce the same over-counting confirmed above. Checked on
+count would reintroduce the same overcounting confirmed above. Checked on
 the same convergent test graph: summing each node's individually-computed
 reachability to `A` gives a total scalar of `≈ 6.09` — this number is
 unchanged from the earlier (incorrect) version of this corollary, because
@@ -1115,17 +1119,17 @@ total is an **expected count of independent exposure events**, not a
 probability — it is expected to exceed 1 once a subgraph has more than a
 couple of plausible origins, and that is the correct, informative reading,
 not an error to correct.
- 
+
 **Corollary (Homogeneous single-path chains reduce to `p^k`).** When there
 is no convergence anywhere on the path and every hop shares one uniform
 probability `p`, `R` collapses to `p^k` — geometric decay in depth, exactly
 as originally stated, now confirmed as the correct special case rather
 than the general rule.
- 
+
 **Corollary (What is actually measurable — `weight` vs. `p`).** The two
 terms in the formula are not equally obtainable from real code, and this
 matters for anyone trying to apply Theorem 10 rather than just state it:
- 
+
 - **`weight(N)` is directly countable.** It is defined (§1) as
   `|{ Y ∈ ^A : fi ∈ U(Y,A) }|` — the number of dependents whose code
   actually calls a given function. This can be measured mechanically, by
@@ -1140,6 +1144,7 @@ matters for anyone trying to apply Theorem 10 rather than just state it:
   empirical estimate drawn from version-history data, if available — e.g.
   how often a change at the dependency historically forced a matching
   change at this hop, across past releases.
+
 A node-intrinsic term — call it `t(X)`, the baseline chance `X` is edited
 directly, independent of anything it depends on — was considered as a
 further refinement (folding `t(X)` into `R(X)`'s recursive step as an
@@ -1158,26 +1163,26 @@ tractable, still-useful question — *given* a change at a specific point,
 how far does it spread — without requiring an estimate of how likely that
 originating change was in the first place. `t(X)` is documented here as
 an open, deliberately-excluded extension, not a gap that was missed.
- 
+
 Flow Notation gives the exact combination rule once `p` and `weight` values
 are known, but it does not itself supply a mechanical procedure for
 obtaining `p` the way it does for `weight`. This is a real limitation to
 state plainly, not a gap to paper over: the width term is an observation;
 the propagation term is a judgment or an estimate.
- 
+
 **Corollary (Unpacking an expected value into a real distribution).** A sum
 like `1.7`, arising when a Node's contract has multiple independently-used
 functions, should not be read as "one function's exposure is certain and a
 second is likely" — that implies one term equals 1, which is rarely true.
 The correct unpacking, for two independent exposures `p1`, `p2`, is the
 full distribution over how many of them actually reach the ancestor:
- 
+
 ```
 P(neither reaches)     = (1−p1)(1−p2)
 P(exactly one reaches) = p1(1−p2) + (1−p1)p2
 P(both reach)          = p1·p2
 ```
- 
+
 Checked numerically for `p1=0.9, p2=0.8`: `P(neither)=0.02`,
 `P(exactly one)=0.26`, `P(both)=0.72` — summing to 1, with expected value
 `0(0.02)+1(0.26)+2(0.72)=1.7`, matching the simple sum exactly (as it must,
@@ -1186,7 +1191,7 @@ reading of `1.7` is not "one is certain, a second is likely" but "the
 dominant single outcome, at 72%, is that both functions' changes reach this
 node" — the full distribution, where feasible, gives a materially sharper
 picture than the sum alone.
- 
+
 **Corollary (Why width and reachability are both necessary).** A node with
 enormous `|^X|` (large Theorem 4 width) sitting behind several
 well-absorbing, non-convergent contracts (small `R`) may pose *less* real
@@ -1280,6 +1285,166 @@ distinct, mechanically-detectable condition.
 
 ---
 
+## 8. Beyond the Axioms — Applied Models
+
+Everything in §7 is proven: each Theorem follows necessarily from Axioms
+1–3, and nothing there could be false while the Axioms hold. This section
+is different in kind, not just in number, and is kept structurally
+separate to avoid diluting that guarantee. Nothing here earns a `∎`.
+
+### 8.1 Analogy — The Load Path
+
+A mnemonic, not a proof: Flow Notation's three Axioms rhyme closely with
+**load path**, a real, precise term from structural engineering — useful
+for feeling the stakes of each Axiom, not for claiming the two domains
+share underlying mathematics.
+
+- **Axiom 1 (Unidirectional Flow) ~ gravity.** Load in a standing structure
+  only ever flows downward, roof to foundation. A beam does not "depend
+  upward" on the roof — the roof's weight depends on the beam beneath it.
+  Load flowing upward in a standing structure is not a variation; it is a
+  sign something has already failed.
+
+- **Axiom 2 (No Skip-Level Access) ~ a continuous load path.** A
+  **discontinuous load path** — weight bypassing its intended intermediate
+  support and landing directly on something further down — is a named,
+  serious structural engineering failure mode, not a style preference.
+  Skipping a member means load arrives somewhere never sized to carry it,
+  with no warning until it breaks. That is Axiom 2's violation translated
+  into a domain where the failure is catastrophic rather than abstract.
+
+- **Axiom 3 (Local Minimal Fan-Out) ~ no more supports than the load
+  requires.** A well-engineered structure carries its load through exactly
+  the members needed, not padded with unjustified extras — more material
+  is more inspection points, more places to eventually fail. Worth being
+  honest that real buildings do add deliberate safety-factor redundancy
+  beyond the bare theoretical minimum, so the analogy is not exact here —
+  but the underlying instinct, no unjustified extra support, is the same
+  discipline Axiom 3 encodes for software.
+
+### 8.2 Beyond the Model
+
+What follows is a **model**, not a Theorem — a claim about how software is
+actually edited over time, informed by Flow Notation's own definitions but
+not logically entailed by the Axioms the way Shielding or Sibling
+Independence are. It is not numbered alongside the eleven proven results
+in §7.
+
+#### Tendency Decay (a lifecycle model)
+
+**Claim.** Let `t(X)` be the tendency of Node `X` to be edited for its own
+reasons — evaluated **purely on X's own code body**, independent of
+anything `X` depends on (§7, Theorem 10's corollary: `t` is never inherited
+through an edge; only `R` is). `t(X)` is not fixed over `X`'s lifetime:
+
+- **Young Nodes have high `t(X)`.** Freshly written code is unstabilized —
+  its shape, edge cases, and exact responsibility are still being
+  discovered, so edits are frequent.
+- **Over time, `t(X)` trends toward an asymptotic floor determined by
+  whether X is Closed or Open** (the distinction established earlier: a
+  Closed Node contains nothing in its own body anchored to something
+  outside the graph; an Open Node's own body contains a locally-anchored
+  external reference — a policy constant, a legally-mandated figure, a
+  hardcoded precision decision).
+  - **Closed Nodes decay toward 0.** Once a self-contained responsibility
+    is fully explored, the space of plausible edits is exhausted, and
+    genuine reasons to touch the code become rare, then absent.
+  - **Open Nodes decay toward a floor strictly between 0 and 1.** The
+    external anchor never stops existing, so edits never fully cease —
+    but an Open Node is also not edited continuously, so the floor never
+    reaches 1 either.
+- **The trend is not monotonic, but its long-run direction is fixed.**
+  `t(X)` may spike upward at any point — a new feature, a bug, a
+  redesign — but as elapsed time approaches infinity, the trend is
+  downward, converging toward the Node's respective floor. Spikes do not
+  reset the long-run trend; they are noise on top of a decaying signal.
+
+**Why this is a model, not a Theorem.** `t(X)` is a human behavioral
+quantity — how often a team chooses to edit something — not a
+graph-structural one, so it cannot be derived from Axioms 1–3 the way
+Sibling Independence or Shielding were. Nothing here is a guaranteed
+consequence of the Axioms holding; it is an external, empirical pattern
+being layered on top of Flow Notation's vocabulary, borrowing its terms
+(`t(X)`, Closed/Open) without borrowing its proof obligations. What can be
+said in its favor: it matches a very common, widely observed pattern in
+real codebases — new modules churn heavily during their first exposure to
+real use, and stabilize once their edge cases are known — and the
+Closed/Open split gives a principled reason for *where* that stabilization
+bottoms out, rather than assuming every Node eventually reaches zero. That
+is evidence for a plausible model, not proof of a theorem.
+
+**Worked check, qualitative.** Using the four cases already built
+(`RoundToNearestCent`, `TaxCalculator`, `OrderTotal`, `InvoiceGenerator`):
+`RoundToNearestCent` (Leaf, Closed) should show `t` decaying to
+approximately 0 once its handful of rounding edge cases are settled.
+`TaxCalculator` (Leaf, Open) should show `t` decaying only to a nonzero
+floor, since tax law never stops moving. `OrderTotal` (non-Leaf, Closed,
+depending only on Closed things) should also decay toward 0, its own body
+containing no external anchor. `InvoiceGenerator`, evaluated **purely on
+its own body** per the corrected definition, decays toward 0 as well —
+its *inherited* exposure through `TaxCalculator` is a separate, nonzero
+quantity captured by `R(InvoiceGenerator)`, not by `t(InvoiceGenerator)`
+itself, confirming the two must stay formally distinct exactly as the
+corrected Theorem 10 requires.
+
+**Practical note (a leading indicator, not a risk score on its own).**
+`t(X)`'s trajectory is most useful as a *signal about where a Node sits in
+its own lifecycle*, not as a standalone danger measure: a young Node with
+high `t(X)` is not necessarily dangerous, only unsettled — the real risk
+(Theorem 4, Theorem 10) still depends on `weight` and `R`, which `t(X)`
+feeds into but never replaces. A mature Node whose `t(X)` has decayed to
+its floor, if that floor is nonzero (Open), is a more honest long-term
+risk than a young Node whose currently-high `t(X)` is simply the normal
+noise of not being finished yet.
+
+### 8.3 Implications of Flow Notation, as of now
+
+A plain summary of what the system currently is and is not, stated
+honestly rather than optimistically.
+
+**What is actually proven.** Eleven Theorems, each following necessarily
+from three Axioms and one Black-Box Property, each checked against real,
+running code — including cases constructed specifically to try to break
+them. Two of those checks failed on the first attempt and were corrected
+in the open (§6.2, Theorem 8's empirical confirmation, Theorem 10's
+convergence fix), which is itself part of the evidence for the eleven that
+remain: nothing here was accepted because it sounded right, only because
+it survived being tested against adversarial cases.
+
+**What the system gives a practitioner, concretely.** A methodology (§0)
+for naming responsibility precisely before trusting any edge; a mechanical
+test (§0, §5) for telling a real dependency from an incidental one; a
+provable invariant (Theorem 2, Theorem 7) for catching hidden coupling
+between things that were never supposed to touch; four named, distinct
+remedies for four distinct structural defects (Promote, Demote, Split,
+Interface Wrap), each dictated by which specific theorem is violated,
+never a matter of taste; and a quantitative exposure formula (Theorem 10)
+that turns "if it works, don't touch it" from a fear into a checkable
+number, including an honest accounting of which of its inputs are
+countable from code and which require judgment.
+
+**What the system does not do.** It does not replace human judgment — Step
+0 and the Dependency Test are procedures a person applies, not a
+mechanical oracle; their output is only as reliable as how honestly they
+were carried out (§7's own conclusion on this point). It does not perform
+decoupling for a tangled design — it can only prove that a given
+decomposition is, or is not, internally consistent, and refuse to produce
+an answer when a responsibility genuinely cannot be named honestly. It
+does not measure abstraction level, code quality in any aesthetic sense,
+or anything about a system's behavior beyond its dependency structure. And
+as §8.2 makes explicit, it does not yet have a proven account of *why* a
+graph changes over time — only a stated, clearly-marked model for it,
+separate from the eleven results that can be trusted without qualification.
+
+**Where this leaves the document.** A complete, internally consistent
+formal system for dependency architecture, with a load-bearing distinction
+between what is proven and what is proposed, maintained deliberately even
+when — as with the corrected material in §8 — that distinction cost giving
+up a result that had already been written down as settled. That
+willingness to retract rather than keep a convenient but unearned claim is,
+as much as any individual Theorem, the actual content of what Flow
+Notation is.
+
 ## Code examples
 
 Every claim in this document that could be tested against real code was
@@ -1300,6 +1465,7 @@ where the first version was wrong, and the document says so explicitly).
 | `examples/theorem10-refined-reachability.js` | Theorem 10, refined — recursive `R(X)` correctly handling convergence points (a node with more than one parent), confirmed on a graph with two real convergence points |
 | `examples/theorem11-interface-granularity.js` | Theorem 11 — Interface Layer dependency sets diverging within one Node |
 | `examples/theorem11-split-remedy.js` | Theorem 11's Split remedy — verified behavior-identical before and after |
+| `examples/tendency-decay-purely-local.js` | Tendency Decay model (§8, not a Theorem) — confirms `t(X)` must be evaluated purely on a Node's own body, never inflated just by depending on an Open Node; includes the Math.PI vs. hardcoded 3.14 case |
 | `examples/messy-checkout.js` | An unengineered messy example — found and fixed a real hidden edge (Discount → Cart) |
 | `examples/messy-signup.js` / `examples/messy-signup-fixed.js` / `examples/messy-signup-step0.js` | The hardest case in this document — a real skip-level violation where both edges passed the Dependency Test, requiring two separate, non-substitutable fixes (`§6.2`) |
 
