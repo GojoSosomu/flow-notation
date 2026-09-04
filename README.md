@@ -25,11 +25,12 @@ Full license text: https://creativecommons.org/licenses/by/4.0/
 - [4. Worked examples](#4-worked-examples)
 - [5. The Dependency Test (summary)](#5-the-dependency-test-summary)
 - [6. Sibling as a Refactoring Invariant](#6-sibling-as-a-refactoring-invariant)
-- [7. Theorems](#7-theorems) (11 theorems, each proven and empirically tested)
+- [7. Theorems](#7-theorems) (12 theorems, each proven and empirically tested)
 - [8. Beyond the Axioms — Applied Models](#8-beyond-the-axioms--applied-models) (not proven; kept structurally separate from §7)
   - [8.1 Analogy — The Load Path](#81-analogy--the-load-path)
   - [8.2 Beyond the Model](#82-beyond-the-model)
   - [8.3 Implications of Flow Notation, as of now](#83-implications-of-flow-notation-as-of-now)
+  - [8.4 What is Flow Notation actually for? Who, Why, When, Will?](#84-what-is-flow-notation-actually-for-who-why-when-will)
 - [Code examples](#code-examples)
 
 **Code examples referenced throughout this document** are included
@@ -1321,6 +1322,65 @@ cohesion — a granularity problem, Theorem 11). None of the three substitute
 for either of the others; each is the dictated repair for a specific,
 distinct, mechanically-detectable condition.
 
+### Theorem 12 — Universal Anchor
+ 
+**Statement.** For any two Nodes `X, Y` in any Flow Notation graph — no
+matter how disconnected, sharing no real Origin (`↑X ∩ ↑Y`) and no real
+Inheritance (`↓X ∩ ↓Y`) — both are, directly or transitively, anchored to
+the **same single object `∅`**. Specifically: `X`'s ancestor closure `↑X`
+either already contains `X` itself as a member of `~∅` (if `X` is a Peer),
+or terminates at some node that is. The identical guarantee holds for `Y`.
+Because `∅` is unique — one single marker for the entire system, never one
+per graph or per component (§1) — `X` and `Y`'s respective termination
+points are members of the exact same set, `~∅`, regardless of whether any
+real structural overlap exists between them, same goes to `X`'s ancestor 
+closure `↓X`either already contains `X` itself as a member of `~∅` 
+(if `X` is a Barren).
+ 
+**Proof.** By Axiom 1, the graph is acyclic. Walking `^X` repeatedly (i.e.
+computing `↑X`) cannot continue indefinitely: an infinite ascent would
+require revisiting a node, which is precisely what acyclicity forbids. The
+walk must therefore terminate, and it terminates exactly at node(s)
+satisfying `^X = ∅` — by definition, members of `~∅`, i.e. Peers. If `X`
+is itself such a node, it satisfies this directly; otherwise `↑X` contains
+at least one. The same argument, independently, applies to `Y`. Since `∅`
+is a single object system-wide rather than a per-node or per-component
+construct, both termination points belong to the same set `~∅`, anchored
+to the same `∅`. Therefore `X` and `Y` are always connected, at minimum,
+through this shared universal anchor. ∎
+ 
+**Corollary (This does not restore universal Origin/Inheritance).** This
+guarantee is strictly weaker than claiming `X` and `Y` share real graph
+structure. `Origin(X,Y) = ↑X ∩ ↑Y` and `Inheritance(X,Y) = ↓X ∩ ↓Y` can
+both be genuinely empty — confirmed directly on the disconnected-roots
+case already in §4 (`A→B`, `C→D`: `Origin(A,C) = ∅`, `Inheritance(A,C) =
+∅`, verified by real set intersection) — while Theorem 12's guarantee
+still holds regardless. The two claims answer different questions:
+Origin/Inheritance ask whether two Nodes share actual structure; Theorem
+12 asks whether they are both, ultimately, bound by the same universal
+condition. A pair of Nodes can simultaneously have zero shared structure
+and a shared universal anchor, without contradiction — this was tested
+directly, not assumed, after an earlier, broader version of this claim
+("any two Nodes always share *some* real node") was checked and found
+false on the same counter-example.
+ 
+**Corollary (The guarantee is symmetric — corrected).** An earlier version
+of this corollary claimed the guarantee held only upward, on the grounds
+that `B ≠ D` for two different Barren nodes. That claim was wrong, and the
+error is worth stating precisely: `A ≠ C` for two different Peers is
+equally true, and it never broke the upward proof, because the proof was
+never about two Nodes being *identical* — it was about both belonging to
+the *same set*, `~∅`, anchored to one reified `∅`. `∅` is used, by the
+same convention, for both "no real parent" (Peer, `^X = ∅`) and "no real
+children" (Barren, `~X = ∅`) — it was never redefined as something
+narrower for the downward case. Once `∅` is read consistently as one
+single boundary marker for both directions, `↓X` and `↓Y` terminate at
+members of the same Barren set by the identical argument that `↑X` and
+`↑Y` terminate at members of `~∅`. The guarantee is symmetric: any two
+Nodes `X, Y` are anchored to the same `∅` both upward (through `~∅`) and
+downward (through the Barren set), regardless of whether they share any
+real Origin or Inheritance.
+
 ---
 
 ## 8. Beyond the Axioms — Applied Models
@@ -1482,6 +1542,60 @@ up a result that had already been written down as settled. That
 willingness to retract rather than keep a convenient but unearned claim is,
 as much as any individual Theorem, the actual content of what Flow
 Notation is.
+
+### 8.4 What is Flow Notation actually for? Who, Why, When, Will?
+ 
+**What.** A tool for **verification and consequence-derivation**, not for
+construction. Flow Notation can tell you, with certainty, whether a graph
+of Nodes and Edges is well-formed, and it can derive every guaranteed
+consequence of that graph once it exists (Theorems 1–12). It cannot build
+the graph for you. Naming a Node's responsibility honestly, deciding what
+genuinely depends on what, and imagining a better decomposition when one
+is needed are acts of human critical thinking, problem-solving, and
+creativity — Step 0 and the Dependency Test are the procedures a person
+carries those acts out *through*, not a substitute for having them. This
+was true from the first worked example in §4 and confirmed the hard way in
+§6.2: the Theorems could detect that something was wrong, but a human had
+to think of the actual fix, twice, before the graph was genuinely correct.
+ 
+**Who.** Anyone responsible for a codebase's dependency structure over
+time — not necessarily an architect by title. The methodology (§0) assumes
+only that its user is willing to state a responsibility precisely and test
+it honestly against real code; nothing about Flow Notation requires prior
+familiarity with the Axioms to be applied usefully, only the discipline of
+refusing to accept a vague name or an unexamined edge.
+ 
+**Why.** Because "if it works, don't touch it" is a fear-based default,
+and fear that cannot distinguish load-bearing structure from incidental
+convenience protects both equally, at the cost of never safely touching
+either (§7, Theorem 5's practical discussion). Flow Notation exists to
+convert that fear into a checkable condition — a real edge either survives
+the Dependency Test or it doesn't; a piece of contract either has real
+consumers or it doesn't (Theorem 5); a Node's fan-out either is
+irreducible or it isn't (Axiom 3). The value is not that it makes
+architecture easy — it is that it makes the parts that are actually safe
+to change distinguishable from the parts that are not, instead of treating
+all code as equally fragile by default.
+ 
+**When.** Most usefully applied *before* trusting a new edge (§0's
+explicit ordering: methodology first, then Axioms), and *again* whenever a
+Node's responsibility or an existing edge comes into doubt — not as a
+one-time audit, but as a standing discipline re-applied at the moment
+something looks uncertain. It is least useful applied retroactively across
+an entire large, unfamiliar codebase in one pass (§8.3 already notes this
+is impractical at scale by hand); it is most useful applied locally, to
+the specific piece of code someone is actually about to change or already
+suspects is wrong.
+ 
+**Will.** Whether Flow Notation is ever adopted beyond this document is
+genuinely unknown, and that uncertainty does not change what has already
+been established here: eleven proven Theorems, tested against real and
+adversarial code, two of them corrected in the open rather than quietly
+fixed, and a vocabulary — Sibling, Parent, Peer, Barren, Promote, Demote,
+Split, Interface Wrap — precise enough that two people reasoning about the
+same piece of code should reach the same answer about whether an edge is
+real. Adoption is a separate question from correctness, and this document
+has never depended on the former to justify the latter.
 
 ## Code examples
 
