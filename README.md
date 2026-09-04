@@ -258,6 +258,39 @@ depend on the same child `D` (converge from below) — the mirror image of
 Sibling, opposite direction. Read `A^C` as "`A` is parent-*with* `C`"
 (jointly parents of something), not "`A` is parent-of `C`."
 
+**Barren — `~X = ∅`**
+A Node with no dependencies of its own — `D(X) = ∅`, a true leaf. The
+mirror image of Peer, across the opposite direction of the same axis: Peer
+is the absence of structure *above* a single Node (`^X = ∅`, nothing
+depends on it); Barren is the absence of structure *below* a single Node
+(`~X = ∅`, it depends on nothing). Where Sibling and Parent describe
+*shared* structure between two Nodes, Peer and Barren describe *absent*
+structure for one Node alone. Confirmed distinct and non-overlapping on a
+real convergent graph (`A→B→C→D`, `A→F→G→D`): `A` is the graph's only Peer
+(`^A = ∅`), `D` is the graph's only Barren node (`~D = ∅`) — neither
+condition implies or excludes the other in general, since a Node could in
+principle be both (a fully isolated Node with no edges at all in either
+direction) or neither (any interior Node of a longer chain).
+
+**Ancestor — `↑X`**
+The full upward transitive closure of `^`: `↑X = ^X ∪ ^(^X) ∪ ^(^(^X)) ∪
+...`, every Node that depends on `X`, directly or indirectly, all the way
+up to and including the roots in `~∅`. `^X` (Parent, one hop) is always a
+subset of `↑X` — the first layer of the full ancestry, never the whole of
+it. Termination is guaranteed for free by Axiom 1: an infinite ascent
+would require a cycle, which cannot exist in a DAG. Confirmed on the same
+convergent test graph: `↑D = {B, C, G, A, F}` — every Node that eventually,
+through any path, depends on `D`.
+
+**Descendant — `↓X`**
+The mirror closure downward: `↓X = ~X ∪ ~(~X) ∪ ~(~(~X)) ∪ ...`, every
+Node `X` depends on, directly or indirectly, terminating at Barren nodes
+(leaves) rather than at `∅`. `~X` (Sibling, one hop) is always a subset of
+`↓X`. This is precisely the set Theorem 10's `TotalExposure(A)` corollary
+already sums `R(A←N)` over, informally described there as "every node in
+A's descendant subgraph" — `↓A` is the formal name for that set. Confirmed
+on the same test graph: `↓A = {B, G, C, D, F}`, matching exactly.
+
 Notes on interaction between relations:
 
 - Peer and Sibling are mutually exclusive for a given pair (Peer is the
@@ -270,6 +303,11 @@ Notes on interaction between relations:
   (reachable via a longer path) is not a member of `^D`, exactly as Sibling
   only sees direct `D(A)` membership. Depth/distance does not leak into
   either relation.
+- Barren is checked structurally, the same way Peer is — neither requires
+  walking `↑X`/`↓X` to confirm; `~X = ∅` and `^X = ∅` are both direct,
+  one-step facts. `↑X` and `↓X` exist for the separate question of *who
+  else* lies along the full chain above or below a Node, not for
+  determining Peer or Barren status itself.
 
 ---
 
@@ -1460,12 +1498,13 @@ where the first version was wrong, and the document says so explicitly).
 | `examples/theorem5-demotion.js` | Theorem 5 corollary — demoting an Interface Layer member to a sub-layer |
 | `examples/theorem6-interface-wrap.js` | Theorem 6 corollary — Interface Wrap, a fourth remedy: absorb a capability (originally a separate Node) into a private sub-layer, then build a second Interface Layer member on the same Node |
 | `examples/theorem6-interface-wrap-generalized.js` | Interface Wrap generalized — same operation when the source is an existing Interface Layer member, not a separate Node: push it into a private sub-layer, build one honest doorway per distinct consumer |
+| `examples/tendency-decay-purely-local.js` | Tendency Decay model (§8, not a Theorem) — confirms `t(X)` must be evaluated purely on a Node's own body, never inflated just by depending on an Open Node; includes the Math.PI vs. hardcoded 3.14 case |
 | `examples/theorem8-nested-composition.js` | Theorem 8 — the failed flat-private-method attempt, then the corrected nested-class version |
 | `examples/theorem10-real.js` | Theorem 10 — exposure formula applied to a real 4-node chain, weight and `p_i` estimated from actual code |
 | `examples/theorem10-refined-reachability.js` | Theorem 10, refined — recursive `R(X)` correctly handling convergence points (a node with more than one parent), confirmed on a graph with two real convergence points |
+| `examples/barren-ancestor-descendant.js` | §3 relations — Barren (`~X = ∅`), and the full transitive closures Ancestor (`↑X`) and Descendant (`↓X`), confirmed on the same convergent test graph |
 | `examples/theorem11-interface-granularity.js` | Theorem 11 — Interface Layer dependency sets diverging within one Node |
 | `examples/theorem11-split-remedy.js` | Theorem 11's Split remedy — verified behavior-identical before and after |
-| `examples/tendency-decay-purely-local.js` | Tendency Decay model (§8, not a Theorem) — confirms `t(X)` must be evaluated purely on a Node's own body, never inflated just by depending on an Open Node; includes the Math.PI vs. hardcoded 3.14 case |
 | `examples/messy-checkout.js` | An unengineered messy example — found and fixed a real hidden edge (Discount → Cart) |
 | `examples/messy-signup.js` / `examples/messy-signup-fixed.js` / `examples/messy-signup-step0.js` | The hardest case in this document — a real skip-level violation where both edges passed the Dependency Test, requiring two separate, non-substitutable fixes (`§6.2`) |
 
