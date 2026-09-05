@@ -1323,7 +1323,7 @@ for either of the others; each is the dictated repair for a specific,
 distinct, mechanically-detectable condition.
 
 ### Theorem 12 — Universal Anchor
- 
+
 **Statement.** For any two Nodes `X, Y` in any Flow Notation graph — no
 matter how disconnected, sharing no real Origin (`↑X ∩ ↑Y`) and no real
 Inheritance (`↓X ∩ ↓Y`) — both are, directly or transitively, anchored to
@@ -1333,10 +1333,8 @@ or terminates at some node that is. The identical guarantee holds for `Y`.
 Because `∅` is unique — one single marker for the entire system, never one
 per graph or per component (§1) — `X` and `Y`'s respective termination
 points are members of the exact same set, `~∅`, regardless of whether any
-real structural overlap exists between them, same goes to `X`'s ancestor 
-closure `↓X`either already contains `X` itself as a member of `~∅` 
-(if `X` is a Barren).
- 
+real structural overlap exists between them.
+
 **Proof.** By Axiom 1, the graph is acyclic. Walking `^X` repeatedly (i.e.
 computing `↑X`) cannot continue indefinitely: an infinite ascent would
 require revisiting a node, which is precisely what acyclicity forbids. The
@@ -1348,7 +1346,7 @@ is a single object system-wide rather than a per-node or per-component
 construct, both termination points belong to the same set `~∅`, anchored
 to the same `∅`. Therefore `X` and `Y` are always connected, at minimum,
 through this shared universal anchor. ∎
- 
+
 **Corollary (This does not restore universal Origin/Inheritance).** This
 guarantee is strictly weaker than claiming `X` and `Y` share real graph
 structure. `Origin(X,Y) = ↑X ∩ ↑Y` and `Inheritance(X,Y) = ↓X ∩ ↓Y` can
@@ -1363,7 +1361,7 @@ and a shared universal anchor, without contradiction — this was tested
 directly, not assumed, after an earlier, broader version of this claim
 ("any two Nodes always share *some* real node") was checked and found
 false on the same counter-example.
- 
+
 **Corollary (The guarantee is symmetric — corrected).** An earlier version
 of this corollary claimed the guarantee held only upward, on the grounds
 that `B ≠ D` for two different Barren nodes. That claim was wrong, and the
@@ -1380,6 +1378,31 @@ members of the same Barren set by the identical argument that `↑X` and
 Nodes `X, Y` are anchored to the same `∅` both upward (through `~∅`) and
 downward (through the Barren set), regardless of whether they share any
 real Origin or Inheritance.
+
+**Corollary (Three-Way Exhaustiveness — every pair has an answer).** For
+any two Nodes `X, Y`, exactly one of three cases applies, with zero
+exceptions:
+
+1. **Single-node commonality** — `Origin(X,Y)` or `Inheritance(X,Y)`
+   contains exactly one Node.
+2. **Multiple-node commonality** — `Origin(X,Y)` or `Inheritance(X,Y)`
+   contains more than one Node.
+3. **The `∅` anchor** — both `Origin(X,Y)` and `Inheritance(X,Y)` are
+   empty, and Theorem 12 guarantees the shared-`∅` relationship still
+   holds regardless.
+
+No fourth case exists: escaping all three would require some Node whose
+`↑` or `↓` closure never terminates, which is impossible under Axiom 1
+without a cycle. This makes "what do `X` and `Y` have in common" a
+question with a **guaranteed, well-defined answer for every possible
+pair** — never a dead end. Before Theorem 12, cases where Origin and
+Inheritance were both empty had no further answer available; the question
+simply stopped. Theorem 12 closes that gap permanently, which is what
+makes it different in kind from Theorems 1–11: those each describe a
+consequence *given* a specific graph shape, while this one guarantees the
+underlying question about *any* two Nodes is never unanswerable in the
+first place — a property later reasoning about arbitrary pairs of Nodes
+can now depend on without a separate exception case.
 
 ---
 
@@ -1425,7 +1448,7 @@ share underlying mathematics.
 What follows is a **model**, not a Theorem — a claim about how software is
 actually edited over time, informed by Flow Notation's own definitions but
 not logically entailed by the Axioms the way Shielding or Sibling
-Independence are. It is not numbered alongside the eleven proven results
+Independence are. It is not numbered alongside the twelve proven results
 in §7.
 
 #### Tendency Decay (a lifecycle model)
@@ -1532,7 +1555,7 @@ does not measure abstraction level, code quality in any aesthetic sense,
 or anything about a system's behavior beyond its dependency structure. And
 as §8.2 makes explicit, it does not yet have a proven account of *why* a
 graph changes over time — only a stated, clearly-marked model for it,
-separate from the eleven results that can be trusted without qualification.
+separate from the twelve results that can be trusted without qualification.
 
 **Where this leaves the document.** A complete, internally consistent
 formal system for dependency architecture, with a load-bearing distinction
@@ -1544,11 +1567,11 @@ as much as any individual Theorem, the actual content of what Flow
 Notation is.
 
 ### 8.4 What is Flow Notation actually for? Who, Why, When, Will?
- 
+
 **What.** A tool for **verification and consequence-derivation**, not for
 construction. Flow Notation can tell you, with certainty, whether a graph
 of Nodes and Edges is well-formed, and it can derive every guaranteed
-consequence of that graph once it exists (Theorems 1–12). It cannot build
+consequence of that graph once it exists (Theorems 1–11). It cannot build
 the graph for you. Naming a Node's responsibility honestly, deciding what
 genuinely depends on what, and imagining a better decomposition when one
 is needed are acts of human critical thinking, problem-solving, and
@@ -1557,14 +1580,14 @@ carries those acts out *through*, not a substitute for having them. This
 was true from the first worked example in §4 and confirmed the hard way in
 §6.2: the Theorems could detect that something was wrong, but a human had
 to think of the actual fix, twice, before the graph was genuinely correct.
- 
+
 **Who.** Anyone responsible for a codebase's dependency structure over
 time — not necessarily an architect by title. The methodology (§0) assumes
 only that its user is willing to state a responsibility precisely and test
 it honestly against real code; nothing about Flow Notation requires prior
 familiarity with the Axioms to be applied usefully, only the discipline of
 refusing to accept a vague name or an unexamined edge.
- 
+
 **Why.** Because "if it works, don't touch it" is a fear-based default,
 and fear that cannot distinguish load-bearing structure from incidental
 convenience protects both equally, at the cost of never safely touching
@@ -1576,7 +1599,7 @@ irreducible or it isn't (Axiom 3). The value is not that it makes
 architecture easy — it is that it makes the parts that are actually safe
 to change distinguishable from the parts that are not, instead of treating
 all code as equally fragile by default.
- 
+
 **When.** Most usefully applied *before* trusting a new edge (§0's
 explicit ordering: methodology first, then Axioms), and *again* whenever a
 Node's responsibility or an existing edge comes into doubt — not as a
@@ -1586,10 +1609,10 @@ an entire large, unfamiliar codebase in one pass (§8.3 already notes this
 is impractical at scale by hand); it is most useful applied locally, to
 the specific piece of code someone is actually about to change or already
 suspects is wrong.
- 
+
 **Will.** Whether Flow Notation is ever adopted beyond this document is
 genuinely unknown, and that uncertainty does not change what has already
-been established here: eleven proven Theorems, tested against real and
+been established here: twelve proven Theorems, tested against real and
 adversarial code, two of them corrected in the open rather than quietly
 fixed, and a vocabulary — Sibling, Parent, Peer, Barren, Promote, Demote,
 Split, Interface Wrap — precise enough that two people reasoning about the
@@ -1617,6 +1640,7 @@ where the first version was wrong, and the document says so explicitly).
 | `examples/theorem10-real.js` | Theorem 10 — exposure formula applied to a real 4-node chain, weight and `p_i` estimated from actual code |
 | `examples/theorem10-refined-reachability.js` | Theorem 10, refined — recursive `R(X)` correctly handling convergence points (a node with more than one parent), confirmed on a graph with two real convergence points |
 | `examples/barren-ancestor-descendant.js` | §3 relations — Barren (`~X = ∅`), and the full transitive closures Ancestor (`↑X`) and Descendant (`↓X`), confirmed on the same convergent test graph |
+| `examples/theorem12-universal-anchor.js` | Theorem 12 — confirms any two disconnected Nodes share zero real Origin/Inheritance yet are both anchored to the same `∅`; also confirms the upward/downward asymmetry (Barren nodes are not a shared marker) |
 | `examples/theorem11-interface-granularity.js` | Theorem 11 — Interface Layer dependency sets diverging within one Node |
 | `examples/theorem11-split-remedy.js` | Theorem 11's Split remedy — verified behavior-identical before and after |
 | `examples/messy-checkout.js` | An unengineered messy example — found and fixed a real hidden edge (Discount → Cart) |
