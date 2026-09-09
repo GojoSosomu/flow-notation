@@ -25,7 +25,7 @@ Full license text: https://creativecommons.org/licenses/by/4.0/
 - [4. Worked examples](#4-worked-examples)
 - [5. The Dependency Test (summary)](#5-the-dependency-test-summary)
 - [6. Sibling as a Refactoring Invariant](#6-sibling-as-a-refactoring-invariant)
-- [7. Theorems](#7-theorems) (12 theorems, each proven and empirically tested)
+- [7. Theorems](#7-theorems) (13 theorems, each proven and empirically tested)
 - [8. Beyond the Axioms — Applied Models](#8-beyond-the-axioms--applied-models) (not proven; kept structurally separate from §7)
   - [8.1 Analogy — The Load Path](#81-analogy--the-load-path)
   - [8.2 Beyond the Model](#82-beyond-the-model)
@@ -1322,6 +1322,87 @@ cohesion — a granularity problem, Theorem 11). None of the three substitute
 for either of the others; each is the dictated repair for a specific,
 distinct, mechanically-detectable condition.
 
+### A retraction — the "hard cycle" example was never a cycle
+
+An earlier version of this document claimed to have built a genuine
+`A→B→C→A` cycle that resisted both value-conversion and Split, motivating
+a fourth remedy. On direct re-examination of the actual code, this claim
+was wrong, and the error is worth stating precisely rather than quietly
+fixed: `A`'s own class body never references `B` or `C`. `B`'s own class
+body never references `A` or `C`. Only `C`'s constructor holds a reference
+to `A`, and only `C`'s `respond()` method calls it — the single real edge
+in that example was `C→A`, full stop. The described `A→B→C` chain was
+never a dependency structure at all; it was the *order an external
+orchestration script happened to call methods in* — `a.proposeOffer()`,
+then `b.process()`, then `c.respond()`. That call sequence is not an edge,
+by the same definition stated from the very first message in this
+document's construction: an arrow represents a dependent relationship, not
+a step-by-step procedure. A single edge, `C→A`, with nothing pointing back
+to `C`, is not a cycle. There was nothing to break.
+
+The proposed fourth remedy, "Shape Inversion," was therefore built to
+solve a problem that never existed in the constructed example. This does
+not retroactively invalidate the underlying technique — inverting a
+dependency from identity to shape when a real cycle exists is a
+legitimate, well-established pattern (Dependency Inversion, from SOLID),
+and the paradigm-neutrality check (OOP abstract class vs. plain function,
+both producing identical output) remains a valid piece of reasoning on its
+own. What is retracted is the specific claim that a genuine, unresolvable-
+by-other-means cycle was constructed and tested. It was not. Until a
+correctly-verified hard cycle is built — one where `A`, `B`, and `C`
+genuinely hold and call each other from within their own method bodies,
+checked edge by edge against the Dependency Test rather than assumed from
+a narrative description — this remedy remains an untested idea, not a
+confirmed fourth entry in Flow Notation's remedy vocabulary. It is left
+here, retracted rather than deleted, because the retraction itself is
+useful: it is a second demonstration, alongside the earlier `1/depth` and
+`weight(N)` corrections, that this document treats its own errors as worth
+recording, not hiding.
+
+### Genuine cycles, confirmed correctly this time
+
+Two real cycles, checked edge by edge against the actual code rather than
+assumed from narrative, confirming they are structural, not narrative
+artifacts.
+
+**`A→B, B→A`.** `A` holds a reference to `B` and calls it from within its
+own method (`start`); `B` holds a reference to `A` and calls it from
+within its own method (`step`, in the three-node case) or directly
+(`helper`, in the two-node case). Two consequences confirm this is a
+genuine violation, not a theoretical one:
+
+1. **Construction itself is broken.** Neither `A` nor `B` can be fully
+   built first, since each constructor requires a reference to the other.
+   The only way to wire it at all was a post-construction patch
+   (`a.b = b`, assigned after both objects already exist) — itself a code
+   smell that flags the cycle before anything even runs.
+2. **Execution crashes.** Calling either method recurses into the other,
+   which recurses back, forever: `Maximum call stack size exceeded`,
+   confirmed by actually running it. This is Axiom 1's violation made
+   directly observable, not abstract.
+
+**`A→B→C, C→A`.** Same discipline, three Nodes: `A.start()` calls
+`B.step()` from within its own body; `B.step()` calls `C.finish()` from
+within its own body; `C.finish()` calls back into `A.start()` from within
+its own body. All three edges confirmed real by reading the method
+bodies directly, not by narrative description of what the classes were
+"supposed to" represent. Running it without an artificial stopping
+condition produces the identical failure: `Maximum call stack size
+exceeded`. Adding an arbitrary base case (`if (value > 100) return value`)
+makes it terminate, but this does not resolve the underlying Axiom 1
+violation — it only demonstrates that a cycle can be made to *not crash*
+by accident of data, while the structural problem (three Nodes each
+requiring the others to exist for construction, a hidden circular call
+path) remains.
+
+Neither example needed a contrived scenario to produce — both are the
+plain, direct consequence of writing the edges the way Axiom 1 forbids,
+and both are independently confirmable by running the code, not by
+reasoning about a described chain of custody. Whether either one can be
+resolved by Shape Inversion, Split, or a genuinely new remedy remains an
+open question, deliberately left open rather than answered with another
+unverified claim.
+
 ### Theorem 12 — Universal Anchor
 
 **Statement.** For any two Nodes `X, Y` in any Flow Notation graph — no
@@ -1404,6 +1485,117 @@ underlying question about *any* two Nodes is never unanswerable in the
 first place — a property later reasoning about arbitrary pairs of Nodes
 can now depend on without a separate exception case.
 
+### Theorem 13 — Fine-Resolution Primacy
+
+**Statement.** A cycle apparent at the Node level of resolution is only a
+genuine Axiom 1 violation if it survives at the **Interface Layer**
+resolution — the level of actual, specific method calls between Nodes. If
+tracing the real calls shows every step landing on a distinct Interface
+Layer member, never repeating one already visited, the Node-level
+appearance of a cycle was a lossy artifact of collapsing distinct members
+into one undifferentiated Node label, not a real structural violation. The
+converse does not hold with the same leniency: a cycle confirmed at the
+Interface Layer — a real, traceable repeat of the same specific call
+path — is a genuine violation regardless of how a coarser, Node-level
+summary might describe it. Interface Layer is both the correct floor and
+the correct ceiling for this check: resolving further, into a Node's own
+sub-layer structure, is neither possible for an outside observer nor
+informative if it were, since a sub-layer can never itself be the crossing
+point between two Nodes (Theorem 6, Black-Box Property) — there is no
+cross-Node cycle to find or dissolve beneath Interface Layer, because
+cross-Node contact cannot occur there at all.
+
+**Proof.** By the definition of Interface Layer (§1) and Theorem 11, a
+Node's total dependency set is the union of what each of its individual
+Interface Layer members separately requires: `D(A) = ⋃ over f ∈ C(A) of
+D(A+f)`. A Node-level edge `A→B` is therefore always a summary — it means
+*some* member of `C(A)` calls into `B`, without specifying which, and a
+reported Node-level cycle `A→B, B→A` means only that *some* member of
+`C(A)` calls into `B` and *some* member of `C(B)` calls back into `A` —
+not necessarily the *same* members, and not necessarily forming an actual
+repeated path. If the specific members involved are distinct at every step
+(`A+f1 → B+g1`, `B+g1 → A+f2`, with `f1 ≠ f2`), the real call sequence is
+`f1 → g1 → f2`, a straight, non-repeating chain — no call site is ever
+revisited, confirmed directly by such a chain terminating normally rather
+than exhausting the call stack. Conversely, if the same specific member is
+genuinely revisited, the violation is not an artifact of resolution — it
+is the actual, traceable fact of the code, confirmed by the call stack
+overflowing exactly as Axiom 1 predicts. The check need not, and cannot,
+go deeper than this: by the Black-Box Property (Theorem 6), no external
+Node — including `B` — can ever legally call into `A`'s sub-layers, so no
+cross-Node repeat can exist below the Interface Layer that isn't already
+visible at it. Interface Layer is therefore the unique, correct resolution
+for this determination, not merely a convenient stopping point along an
+open-ended descent. ∎
+
+**Empirical confirmation.** Built a Node-level pair `A→B, B→A` where the
+actual calls were `A+do → B+something`, `B+something → A+finalize`, with
+`finalize` never calling back into `do` or `something`. Ran cleanly,
+terminated normally (`60`), no crash — confirming the Node-level "cycle"
+was never real. Separately, confirmed that adding arbitrarily deep private
+sub-layer chains beneath `A+do` (`#innerStepOne → #innerStepTwo`, and
+further) changes nothing about the cross-Node determination — the program
+still terminates identically, since those sub-layers are never reachable
+by `B` regardless of depth (Theorem 8's unlimited nesting notwithstanding).
+Separately, built two genuine cycles (`A→B, B→A` and `A→B→C, C→A`) where
+the same specific methods were confirmed, by reading the actual bodies, to
+call back into each other — both crashed with `Maximum call stack size
+exceeded`, confirming those violations were real and fully visible already
+at the Interface Layer, with no need to look further.
+
+**Corollary (Self-recursion is not a Flow Notation edge).** A function
+calling itself, with or without a base case, is not an instance of `A→A`
+in Flow Notation's sense. Edges represent relationships between *distinct*
+well-defined responsibilities (§1); recursion is a single responsibility's
+own internal algorithm choice, never leaving the boundary of one Node's
+body — the same category as a loop or a conditional, which were already
+established as invisible to Flow Notation's edges (§0: an arrow is not a
+step-by-step procedure). Axiom 1 has no bearing on it, because it was
+never modeling this relationship to begin with.
+
+**Corollary (Practical implication for cycle detection).** Any tool or
+person checking a codebase for circular dependencies purely at the
+file/class/Node level risks false positives: two Nodes that call into each
+other through entirely distinct methods, never revisiting a specific call
+site, are not actually cyclic, even though a Node-level import graph would
+flag them as such. A correct check must trace to the Interface Layer
+resolution before concluding a cycle is genuine — exactly the same
+discipline Theorem 11 already required for correctly diagnosing Sibling
+relationships. Tracing further, into sub-layer detail, adds nothing beyond
+this point for this specific question.
+
+**Corollary (Why Interface→Sub-layer still matters, even though this
+theorem stops at Interface Layer).** This theorem's boundary should not be
+read as diminishing the `Interface→Sub-layer` relationship — the opposite
+is true. `Node→Interface` is legal (any external Node may target `A+f`).
+`Interface→Sub-layer` is legal (`A+f` may reach `A_g` internally).
+`Node→Sub-layer` is illegal (confirmed earlier by an actual `SyntaxError`
+when attempted). These are not three independent facts: the second is
+*why* the third holds. `Interface→Sub-layer` being the one legal,
+sanctioned path is exactly what makes `Node→Sub-layer` a violation rather
+than an alternative route — without it, a sub-layer could never be used by
+anything, ever, including its own Node, and the Black-Box Property would
+have nothing to enforce. This theorem's claim is narrow and specific — that
+resolving past Interface Layer adds nothing for *cross-Node cycle
+detection* — not a general claim that sub-layer structure is unimportant.
+It plainly is important, for Composition, Theorem 6, and Theorem 8; it is
+simply not relevant to *this* question.
+
+**A boundary confirmed by testing, not assumed.** An attempt was made
+during this theorem's development to extend the same reasoning to Axiom 2
+(skip-level) violations — specifically, whether `A→B→C` alongside a direct
+`A→C` could be shown genuine-or-dissolved by the same resolution-based
+test used here. It could not: that case (worked through in the
+`FraudScorer`/`OrderApprover`/`CreditChecker` example, §4) resolves via a
+different mechanism entirely — whether the direct edge is *mediated by* the
+indirect path (a Theorem 1, Shielding, question), not whether two
+Node-level labels conflate distinct Interface members (this theorem's
+question). Applying this theorem's literal test to that case gives the
+wrong verdict, since the apparent violation remains visible, unmodified,
+at the Interface Layer resolution, and yet is not real. The two mechanisms
+were kept separate deliberately, after being checked, rather than merged
+for the sake of a broader-sounding theorem.
+
 ---
 
 ## 8. Beyond the Axioms — Applied Models
@@ -1448,7 +1640,7 @@ share underlying mathematics.
 What follows is a **model**, not a Theorem — a claim about how software is
 actually edited over time, informed by Flow Notation's own definitions but
 not logically entailed by the Axioms the way Shielding or Sibling
-Independence are. It is not numbered alongside the twelve proven results
+Independence are. It is not numbered alongside the thirteen proven results
 in §7.
 
 #### Tendency Decay (a lifecycle model)
@@ -1555,7 +1747,7 @@ does not measure abstraction level, code quality in any aesthetic sense,
 or anything about a system's behavior beyond its dependency structure. And
 as §8.2 makes explicit, it does not yet have a proven account of *why* a
 graph changes over time — only a stated, clearly-marked model for it,
-separate from the twelve results that can be trusted without qualification.
+separate from the thirteen results that can be trusted without qualification.
 
 **Where this leaves the document.** A complete, internally consistent
 formal system for dependency architecture, with a load-bearing distinction
@@ -1612,7 +1804,7 @@ suspects is wrong.
 
 **Will.** Whether Flow Notation is ever adopted beyond this document is
 genuinely unknown, and that uncertainty does not change what has already
-been established here: twelve proven Theorems, tested against real and
+been established here: thirteen proven Theorems, tested against real and
 adversarial code, two of them corrected in the open rather than quietly
 fixed, and a vocabulary — Sibling, Parent, Peer, Barren, Promote, Demote,
 Split, Interface Wrap — precise enough that two people reasoning about the
@@ -1643,6 +1835,12 @@ where the first version was wrong, and the document says so explicitly).
 | `examples/theorem12-universal-anchor.js` | Theorem 12 — confirms any two disconnected Nodes share zero real Origin/Inheritance yet are both anchored to the same `∅`; also confirms the upward/downward asymmetry (Barren nodes are not a shared marker) |
 | `examples/theorem11-interface-granularity.js` | Theorem 11 — Interface Layer dependency sets diverging within one Node |
 | `examples/theorem11-split-remedy.js` | Theorem 11's Split remedy — verified behavior-identical before and after |
+| `examples/shape-inversion-cycle-problem.js` | Retracted — on re-examination this code has only one real edge (`C→A`), never a cycle; the "hard case" claim was a call-order misread |
+| `examples/shape-inversion-oop-fix.js` | Retracted alongside the above — solves a cycle that was never actually present |
+| `examples/shape-inversion-functional-fix.js` | Retracted alongside the above — the paradigm-neutrality check itself remains valid reasoning, but the case it was tested against was not a real cycle |
+| `examples/genuine-cycle-AB-BA.js` | A confirmed, genuine cycle — construction requires a post-hoc patch, execution crashes with stack overflow |
+| `examples/genuine-cycle-ABC-CA.js` | A confirmed, genuine three-node cycle — same crash, confirmed edge by edge from the actual method bodies |
+| `examples/theorem13-fine-resolution.js` | Theorem 13 — a Node-level `A→B, B→A` that dissolves at the Interface Layer level (do → something → finalize, no repeats), terminates cleanly instead of crashing |
 | `examples/messy-checkout.js` | An unengineered messy example — found and fixed a real hidden edge (Discount → Cart) |
 | `examples/messy-signup.js` / `examples/messy-signup-fixed.js` / `examples/messy-signup-step0.js` | The hardest case in this document — a real skip-level violation where both edges passed the Dependency Test, requiring two separate, non-substitutable fixes (`§6.2`) |
 
