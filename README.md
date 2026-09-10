@@ -25,7 +25,7 @@ Full license text: https://creativecommons.org/licenses/by/4.0/
 - [4. Worked examples](#4-worked-examples)
 - [5. The Dependency Test (summary)](#5-the-dependency-test-summary)
 - [6. Sibling as a Refactoring Invariant](#6-sibling-as-a-refactoring-invariant)
-- [7. Theorems](#7-theorems) (13 theorems, each proven and empirically tested)
+- [7. Theorems](#7-theorems) (14 theorems, each proven and empirically tested)
 - [8. Beyond the Axioms — Applied Models](#8-beyond-the-axioms--applied-models) (not proven; kept structurally separate from §7)
   - [8.1 Analogy — The Load Path](#81-analogy--the-load-path)
   - [8.2 Beyond the Model](#82-beyond-the-model)
@@ -291,6 +291,19 @@ Node `X` depends on, directly or indirectly, terminating at Barren nodes
 already sums `R(A←N)` over, informally described there as "every node in
 A's descendant subgraph" — `↓A` is the formal name for that set. Confirmed
 on the same test graph: `↓A = {B, G, C, D, F}`, matching exactly.
+
+**Cousin — `Cousin(X,Y) = ↑X ∩ ↑Y`**
+Two Nodes share a real, common ancestor — not necessarily a direct parent
+(that would make them Sibling instead), but some Node further up whose
+existence both `X` and `Y` can trace back to. Named for the ordinary family
+relationship: cousins share a grandparent without sharing a parent.
+
+**Co-heir — `CoHeir(X,Y) = ↓X ∩ ↓Y`**
+The mirror relation downward: two Nodes share a real, common descendant —
+something both `X` and `Y` depend on, directly or indirectly, without
+necessarily sharing a direct child (that would make them Parent instead).
+Named for the ordinary legal/family relationship: co-heirs jointly share
+what will be inherited from a common source.
 
 Notes on interaction between relations:
 
@@ -1406,8 +1419,8 @@ unverified claim.
 ### Theorem 12 — Universal Anchor
 
 **Statement.** For any two Nodes `X, Y` in any Flow Notation graph — no
-matter how disconnected, sharing no real Origin (`↑X ∩ ↑Y`) and no real
-Inheritance (`↓X ∩ ↓Y`) — both are, directly or transitively, anchored to
+matter how disconnected, sharing no real Cousin (`↑X ∩ ↑Y`) and no real
+CoHeir (`↓X ∩ ↓Y`) — both are, directly or transitively, anchored to
 the **same single object `∅`**. Specifically: `X`'s ancestor closure `↑X`
 either already contains `X` itself as a member of `~∅` (if `X` is a Peer),
 or terminates at some node that is. The identical guarantee holds for `Y`.
@@ -1428,14 +1441,14 @@ construct, both termination points belong to the same set `~∅`, anchored
 to the same `∅`. Therefore `X` and `Y` are always connected, at minimum,
 through this shared universal anchor. ∎
 
-**Corollary (This does not restore universal Origin/Inheritance).** This
+**Corollary (This does not restore universal Cousin/CoHeir).** This
 guarantee is strictly weaker than claiming `X` and `Y` share real graph
-structure. `Origin(X,Y) = ↑X ∩ ↑Y` and `Inheritance(X,Y) = ↓X ∩ ↓Y` can
+structure. `Cousin(X,Y) = ↑X ∩ ↑Y` and `CoHeir(X,Y) = ↓X ∩ ↓Y` can
 both be genuinely empty — confirmed directly on the disconnected-roots
-case already in §4 (`A→B`, `C→D`: `Origin(A,C) = ∅`, `Inheritance(A,C) =
+case already in §4 (`A→B`, `C→D`: `Cousin(A,C) = ∅`, `CoHeir(A,C) =
 ∅`, verified by real set intersection) — while Theorem 12's guarantee
 still holds regardless. The two claims answer different questions:
-Origin/Inheritance ask whether two Nodes share actual structure; Theorem
+Cousin/CoHeir ask whether two Nodes share actual structure; Theorem
 12 asks whether they are both, ultimately, bound by the same universal
 condition. A pair of Nodes can simultaneously have zero shared structure
 and a shared universal anchor, without contradiction — this was tested
@@ -1458,17 +1471,17 @@ members of the same Barren set by the identical argument that `↑X` and
 `↑Y` terminate at members of `~∅`. The guarantee is symmetric: any two
 Nodes `X, Y` are anchored to the same `∅` both upward (through `~∅`) and
 downward (through the Barren set), regardless of whether they share any
-real Origin or Inheritance.
+real Cousin or CoHeir.
 
 **Corollary (Three-Way Exhaustiveness — every pair has an answer).** For
 any two Nodes `X, Y`, exactly one of three cases applies, with zero
 exceptions:
 
-1. **Single-node commonality** — `Origin(X,Y)` or `Inheritance(X,Y)`
+1. **Single-node commonality** — `Cousin(X,Y)` or `CoHeir(X,Y)`
    contains exactly one Node.
-2. **Multiple-node commonality** — `Origin(X,Y)` or `Inheritance(X,Y)`
+2. **Multiple-node commonality** — `Cousin(X,Y)` or `CoHeir(X,Y)`
    contains more than one Node.
-3. **The `∅` anchor** — both `Origin(X,Y)` and `Inheritance(X,Y)` are
+3. **The `∅` anchor** — both `Cousin(X,Y)` and `CoHeir(X,Y)` are
    empty, and Theorem 12 guarantees the shared-`∅` relationship still
    holds regardless.
 
@@ -1476,8 +1489,8 @@ No fourth case exists: escaping all three would require some Node whose
 `↑` or `↓` closure never terminates, which is impossible under Axiom 1
 without a cycle. This makes "what do `X` and `Y` have in common" a
 question with a **guaranteed, well-defined answer for every possible
-pair** — never a dead end. Before Theorem 12, cases where Origin and
-Inheritance were both empty had no further answer available; the question
+pair** — never a dead end. Before Theorem 12, cases where Cousin and
+CoHeir were both empty had no further answer available; the question
 simply stopped. Theorem 12 closes that gap permanently, which is what
 makes it different in kind from Theorems 1–11: those each describe a
 consequence *given* a specific graph shape, while this one guarantees the
@@ -1596,6 +1609,42 @@ at the Interface Layer resolution, and yet is not real. The two mechanisms
 were kept separate deliberately, after being checked, rather than merged
 for the sake of a broader-sounding theorem.
 
+### Theorem 14 — Cousin/Co-heir Disjointness and Scope
+
+**Statement.** For any two Nodes `X, Y`: (1) `Cousin(X,Y) ∩ CoHeir(X,Y) =
+∅`, always — a shared ancestor and a shared descendant can never be the
+same Node, since that would require a cycle. (2) Neither relation captures
+*direct* connection between `X` and `Y` themselves — `Cousin(X,Y)` and
+`CoHeir(X,Y)` measure only shared *third-party* ancestors or descendants,
+so both can be empty even when `X` and `Y` are directly, heavily connected
+by real edges between them. (3) If `X` is a Peer, `Cousin(X, anything) =
+∅` always, since `↑X` is empty by definition; symmetrically, if `X` is
+Barren, `CoHeir(X, anything) = ∅` always.
+
+**Proof.** (1) follows directly from Axiom 1: if some `Z` were a member of
+both `↑X` and `↓X`, chaining `Z→...→X` and `X→...→Z` produces a cycle,
+forbidden outright. Since `Cousin(X,Y) ⊆ ↑X` and `CoHeir(X,Y) ⊆ ↓X`, they
+inherit this disjointness — no member of one can ever be a member of the
+other. (2) is confirmed by direct counter-example, checked before being
+claimed: for `A→B→C`, `A→D→E→C`, `Cousin(A,C) = ∅` and `CoHeir(A,C) = ∅`,
+despite two real, direct paths connecting `A` and `C`. This holds because
+`↑X` and `↓X` are built entirely from *other* Nodes' relationships to `X`
+— `X`'s own outgoing and incoming edges never enter into either closure
+directly, so direct connection between `X` and `Y` is structurally
+invisible to both relations by construction, not merely a rare edge case.
+(3) follows immediately by substitution: `Cousin(X,Y) = ↑X ∩ ↑Y`, and if
+`X` is a Peer, `↑X = ∅` by definition (§3), making the intersection empty
+regardless of `Y`; the Barren case for `CoHeir` follows symmetrically from
+`~X = ∅`. ∎
+
+**A note on scope, since an earlier attempt overstated it.** A prior
+attempt to name the union `Cousin(X,Y) ∪ CoHeir(X,Y)` as capturing
+"everything `X` and `Y` have in common" was checked and found false — part
+(2) above is the corrected, precise statement of what these relations
+do and do not measure. The disjointness result is real and useful on its
+own; the earlier, broader claim is not restored by disjointness alone, and
+is not asserted here.
+
 ---
 
 ## 8. Beyond the Axioms — Applied Models
@@ -1640,7 +1689,7 @@ share underlying mathematics.
 What follows is a **model**, not a Theorem — a claim about how software is
 actually edited over time, informed by Flow Notation's own definitions but
 not logically entailed by the Axioms the way Shielding or Sibling
-Independence are. It is not numbered alongside the thirteen proven results
+Independence are. It is not numbered alongside the fourteen proven results
 in §7.
 
 #### Tendency Decay (a lifecycle model)
@@ -1747,7 +1796,7 @@ does not measure abstraction level, code quality in any aesthetic sense,
 or anything about a system's behavior beyond its dependency structure. And
 as §8.2 makes explicit, it does not yet have a proven account of *why* a
 graph changes over time — only a stated, clearly-marked model for it,
-separate from the thirteen results that can be trusted without qualification.
+separate from the fourteen results that can be trusted without qualification.
 
 **Where this leaves the document.** A complete, internally consistent
 formal system for dependency architecture, with a load-bearing distinction
@@ -1804,7 +1853,7 @@ suspects is wrong.
 
 **Will.** Whether Flow Notation is ever adopted beyond this document is
 genuinely unknown, and that uncertainty does not change what has already
-been established here: thirteen proven Theorems, tested against real and
+been established here: fourteen proven Theorems, tested against real and
 adversarial code, two of them corrected in the open rather than quietly
 fixed, and a vocabulary — Sibling, Parent, Peer, Barren, Promote, Demote,
 Split, Interface Wrap — precise enough that two people reasoning about the
@@ -1832,7 +1881,7 @@ where the first version was wrong, and the document says so explicitly).
 | `examples/theorem10-real.js` | Theorem 10 — exposure formula applied to a real 4-node chain, weight and `p_i` estimated from actual code |
 | `examples/theorem10-refined-reachability.js` | Theorem 10, refined — recursive `R(X)` correctly handling convergence points (a node with more than one parent), confirmed on a graph with two real convergence points |
 | `examples/barren-ancestor-descendant.js` | §3 relations — Barren (`~X = ∅`), and the full transitive closures Ancestor (`↑X`) and Descendant (`↓X`), confirmed on the same convergent test graph |
-| `examples/theorem12-universal-anchor.js` | Theorem 12 — confirms any two disconnected Nodes share zero real Origin/Inheritance yet are both anchored to the same `∅`; also confirms the upward/downward asymmetry (Barren nodes are not a shared marker) |
+| `examples/theorem12-universal-anchor.js` | Theorem 12 — confirms any two disconnected Nodes share zero real Cousin/CoHeir yet are both anchored to the same `∅`; also confirms the upward/downward asymmetry (Barren nodes are not a shared marker) |
 | `examples/theorem11-interface-granularity.js` | Theorem 11 — Interface Layer dependency sets diverging within one Node |
 | `examples/theorem11-split-remedy.js` | Theorem 11's Split remedy — verified behavior-identical before and after |
 | `examples/shape-inversion-cycle-problem.js` | Retracted — on re-examination this code has only one real edge (`C→A`), never a cycle; the "hard case" claim was a call-order misread |
@@ -1841,6 +1890,8 @@ where the first version was wrong, and the document says so explicitly).
 | `examples/genuine-cycle-AB-BA.js` | A confirmed, genuine cycle — construction requires a post-hoc patch, execution crashes with stack overflow |
 | `examples/genuine-cycle-ABC-CA.js` | A confirmed, genuine three-node cycle — same crash, confirmed edge by edge from the actual method bodies |
 | `examples/theorem13-fine-resolution.js` | Theorem 13 — a Node-level `A→B, B→A` that dissolves at the Interface Layer level (do → something → finalize, no repeats), terminates cleanly instead of crashing |
+| `examples/theorem13-sublayer-depth-irrelevant.js` | Theorem 13 — confirms arbitrarily deep private sub-layer chains beneath an Interface Layer member change nothing about a cross-Node cycle determination |
+| `examples/theorem14-cousin-coheir.js` | Theorem 14 — confirms Cousin/Co-heir disjointness, the Peer degenerate case, and the scope boundary (direct connection is not captured by either relation) |
 | `examples/messy-checkout.js` | An unengineered messy example — found and fixed a real hidden edge (Discount → Cart) |
 | `examples/messy-signup.js` / `examples/messy-signup-fixed.js` / `examples/messy-signup-step0.js` | The hardest case in this document — a real skip-level violation where both edges passed the Dependency Test, requiring two separate, non-substitutable fixes (`§6.2`) |
 
