@@ -298,7 +298,7 @@ Two Nodes share a real, common ancestor — not necessarily a direct parent
 existence both `X` and `Y` can trace back to. Named for the ordinary family
 relationship: cousins share a grandparent without sharing a parent.
 
-**Co-heir — `CoHeir(X,Y) = ↓X ∩ ↓Y`**
+**Co-heir — `Co-heir(X,Y) = ↓X ∩ ↓Y`**
 The mirror relation downward: two Nodes share a real, common descendant —
 something both `X` and `Y` depend on, directly or indirectly, without
 necessarily sharing a direct child (that would make them Parent instead).
@@ -1420,7 +1420,7 @@ unverified claim.
 
 **Statement.** For any two Nodes `X, Y` in any Flow Notation graph — no
 matter how disconnected, sharing no real Cousin (`↑X ∩ ↑Y`) and no real
-CoHeir (`↓X ∩ ↓Y`) — both are, directly or transitively, anchored to
+Co-heir (`↓X ∩ ↓Y`) — both are, directly or transitively, anchored to
 the **same single object `∅`**. Specifically: `X`'s ancestor closure `↑X`
 either already contains `X` itself as a member of `~∅` (if `X` is a Peer),
 or terminates at some node that is. The identical guarantee holds for `Y`.
@@ -1441,14 +1441,14 @@ construct, both termination points belong to the same set `~∅`, anchored
 to the same `∅`. Therefore `X` and `Y` are always connected, at minimum,
 through this shared universal anchor. ∎
 
-**Corollary (This does not restore universal Cousin/CoHeir).** This
+**Corollary (This does not restore universal Cousin/Co-heir).** This
 guarantee is strictly weaker than claiming `X` and `Y` share real graph
-structure. `Cousin(X,Y) = ↑X ∩ ↑Y` and `CoHeir(X,Y) = ↓X ∩ ↓Y` can
+structure. `Cousin(X,Y) = ↑X ∩ ↑Y` and `Co-heir(X,Y) = ↓X ∩ ↓Y` can
 both be genuinely empty — confirmed directly on the disconnected-roots
-case already in §4 (`A→B`, `C→D`: `Cousin(A,C) = ∅`, `CoHeir(A,C) =
+case already in §4 (`A→B`, `C→D`: `Cousin(A,C) = ∅`, `Co-heir(A,C) =
 ∅`, verified by real set intersection) — while Theorem 12's guarantee
 still holds regardless. The two claims answer different questions:
-Cousin/CoHeir ask whether two Nodes share actual structure; Theorem
+Cousin/Co-heir ask whether two Nodes share actual structure; Theorem
 12 asks whether they are both, ultimately, bound by the same universal
 condition. A pair of Nodes can simultaneously have zero shared structure
 and a shared universal anchor, without contradiction — this was tested
@@ -1471,17 +1471,17 @@ members of the same Barren set by the identical argument that `↑X` and
 `↑Y` terminate at members of `~∅`. The guarantee is symmetric: any two
 Nodes `X, Y` are anchored to the same `∅` both upward (through `~∅`) and
 downward (through the Barren set), regardless of whether they share any
-real Cousin or CoHeir.
+real Cousin or Co-heir.
 
 **Corollary (Three-Way Exhaustiveness — every pair has an answer).** For
 any two Nodes `X, Y`, exactly one of three cases applies, with zero
 exceptions:
 
-1. **Single-node commonality** — `Cousin(X,Y)` or `CoHeir(X,Y)`
+1. **Single-node commonality** — `Cousin(X,Y)` or `Co-heir(X,Y)`
    contains exactly one Node.
-2. **Multiple-node commonality** — `Cousin(X,Y)` or `CoHeir(X,Y)`
+2. **Multiple-node commonality** — `Cousin(X,Y)` or `Co-heir(X,Y)`
    contains more than one Node.
-3. **The `∅` anchor** — both `Cousin(X,Y)` and `CoHeir(X,Y)` are
+3. **The `∅` anchor** — both `Cousin(X,Y)` and `Co-heir(X,Y)` are
    empty, and Theorem 12 guarantees the shared-`∅` relationship still
    holds regardless.
 
@@ -1490,7 +1490,7 @@ No fourth case exists: escaping all three would require some Node whose
 without a cycle. This makes "what do `X` and `Y` have in common" a
 question with a **guaranteed, well-defined answer for every possible
 pair** — never a dead end. Before Theorem 12, cases where Cousin and
-CoHeir were both empty had no further answer available; the question
+Co-heir were both empty had no further answer available; the question
 simply stopped. Theorem 12 closes that gap permanently, which is what
 makes it different in kind from Theorems 1–11: those each describe a
 consequence *given* a specific graph shape, while this one guarantees the
@@ -1611,22 +1611,22 @@ for the sake of a broader-sounding theorem.
 
 ### Theorem 14 — Cousin/Co-heir Disjointness and Scope
 
-**Statement.** For any two Nodes `X, Y`: (1) `Cousin(X,Y) ∩ CoHeir(X,Y) =
+**Statement.** For any two Nodes `X, Y`: (1) `Cousin(X,Y) ∩ Co-heir(X,Y) =
 ∅`, always — a shared ancestor and a shared descendant can never be the
 same Node, since that would require a cycle. (2) Neither relation captures
 *direct* connection between `X` and `Y` themselves — `Cousin(X,Y)` and
-`CoHeir(X,Y)` measure only shared *third-party* ancestors or descendants,
+`Co-heir(X,Y)` measure only shared *third-party* ancestors or descendants,
 so both can be empty even when `X` and `Y` are directly, heavily connected
 by real edges between them. (3) If `X` is a Peer, `Cousin(X, anything) =
 ∅` always, since `↑X` is empty by definition; symmetrically, if `X` is
-Barren, `CoHeir(X, anything) = ∅` always.
+Barren, `Co-heir(X, anything) = ∅` always.
 
 **Proof.** (1) follows directly from Axiom 1: if some `Z` were a member of
 both `↑X` and `↓X`, chaining `Z→...→X` and `X→...→Z` produces a cycle,
-forbidden outright. Since `Cousin(X,Y) ⊆ ↑X` and `CoHeir(X,Y) ⊆ ↓X`, they
-inherit this disjointness — no member of one can ever be a member of the
+forbidden outright. Since `Cousin(X,Y) ⊆ ↑X` and `Co-heir(X,Y) ⊆ ↓X`, they
+inherit this disjointedness — no member of one can ever be a member of the
 other. (2) is confirmed by direct counter-example, checked before being
-claimed: for `A→B→C`, `A→D→E→C`, `Cousin(A,C) = ∅` and `CoHeir(A,C) = ∅`,
+claimed: for `A→B→C`, `A→D→E→C`, `Cousin(A,C) = ∅` and `Co-heir(A,C) = ∅`,
 despite two real, direct paths connecting `A` and `C`. This holds because
 `↑X` and `↓X` are built entirely from *other* Nodes' relationships to `X`
 — `X`'s own outgoing and incoming edges never enter into either closure
@@ -1634,16 +1634,32 @@ directly, so direct connection between `X` and `Y` is structurally
 invisible to both relations by construction, not merely a rare edge case.
 (3) follows immediately by substitution: `Cousin(X,Y) = ↑X ∩ ↑Y`, and if
 `X` is a Peer, `↑X = ∅` by definition (§3), making the intersection empty
-regardless of `Y`; the Barren case for `CoHeir` follows symmetrically from
+regardless of `Y`; the Barren case for `Co-heir` follows symmetrically from
 `~X = ∅`. ∎
 
 **A note on scope, since an earlier attempt overstated it.** A prior
-attempt to name the union `Cousin(X,Y) ∪ CoHeir(X,Y)` as capturing
+attempt to name the union `Cousin(X,Y) ∪ Co-heir(X,Y)` as capturing
 "everything `X` and `Y` have in common" was checked and found false — part
 (2) above is the corrected, precise statement of what these relations
-do and do not measure. The disjointness result is real and useful on its
-own; the earlier, broader claim is not restored by disjointness alone, and
+do and do not measure. The disjointedness result is real and useful on its
+own; the earlier, broader claim is not restored by disjointedness alone, and
 is not asserted here.
+
+**A further clarification — the information is not lost, just answered by
+a different, simpler question.** Direct or transitive connection between
+`X` and `Y` is not actually invisible to Flow Notation's own primitives —
+it is answered directly by checking `Y ∈ ↓X` (does `X` depend on `Y`,
+directly or transitively) or `Y ∈ ↑X` (does `Y` depend on `X`). Confirmed
+directly: for `A→B→C`, `A→D→E→C`, `↓A = {B, C, D, E}`, and `C` is a
+genuine member — `A` depends on `C`, confirmed. `Cousin(A,C)` and
+`Co-heir(A,C)` are a *different, narrower* question: not "does `↓A`
+contain `C`," but "what does `↓A` have in *common* with `↓C`" — an
+intersection between two separate closures, which structurally can never
+include `X` or `Y` themselves (a node cannot be its own ancestor or
+descendant, by Axiom 1). (2) claim is therefore precise: Cousin and
+Co-heir specifically do not capture direct connection, not because the
+information does not exist in the graph, but because they are answering a
+different, third-party-focused question than direct membership does.
 
 ---
 
